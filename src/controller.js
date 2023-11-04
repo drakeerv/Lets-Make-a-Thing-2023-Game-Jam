@@ -95,11 +95,11 @@ class InputSystem {
 
     _setupListeners() {
         this.canvas.addEventListener("keydown", this._onKeyDown.bind(this));
-        this.canvas.addEventListener("keyup", this._onKeyUp.bind(this));
+        window.addEventListener("keyup", this._onKeyUp.bind(this));
 
         this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
         this.canvas.addEventListener("mousedown", this._onMouseDown.bind(this));
-        this.canvas.addEventListener("mouseup", this._onMouseUp.bind(this));
+        window.addEventListener("mouseup", this._onMouseUp.bind(this));
     }
 
     isActionHeld(action) {

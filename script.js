@@ -177,17 +177,6 @@ sceneManager.addScene("game", class extends Scene {
         ctx.fillStyle = "green";
         ctx.fillRect(this.player.x - 10, this.player.y - 10, 20, 20);
 
-        // draw particles
-        for (let i = 0; i < this.particles.length; i++) {
-            const particle = this.particles[i];
-            ctx.fillStyle = particle.color;
-            ctx.beginPath();
-            if (particle.relative) {
-                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-            }
-            ctx.fill();
-        }
-
         // finish drawing
         ctx.restore();
     }
@@ -561,75 +550,6 @@ sceneManager.addOverlay("debug", class extends Scene {
         inputSystem.removeKeyPressListener(this.debugKeyListener, "debug");
     }
 });
-
-// sceneManager.addFilter("filter", class extends Scene {
-//     constructor(name) {
-//         super(name);
-//     }
-
-//     animate(ctx) {
-//         ctx.save();
-
-//         // function generateRandomSnow() {
-//         //     return ((255 * Math.random()) | 0) << 24;
-//         // }
-
-//         // const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-//         // const buffer = new Uint32Array(data.data.buffer);
-//         // for (let i = 0; i < buffer.length; i++) {
-//         //     if (i % 4 == 0) {
-//         //         buffer[i] = 0xFF000000;
-//         //     } else {
-//         //         buffer[i] = generateRandomSnow() + (buffer[i] & 0x00FFFFFF);
-//         //     }
-//         // }
-//         // make faster
-//         // for (let i = 0; i < buffer.length; i += 8) {
-//         //     buffer[i] = 0xFF000000;
-//         // }
-//         // ctx.putImageData(data, 0, 0);
-
-//         ctx.restore();
-//     }
-// });
-
-// maze = generateMaze(MAZE_COLS, MAZE_ROWS);
-// enemy.x = (MAZE_COLS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
-// enemy.y = (MAZE_ROWS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
-// function drawMaze() {
-//     // save ctx
-//     ctx.save();
-
-//     // draw maze
-//     ctx.strokeStyle = "white";
-//     ctx.lineWidth = 5;
-//     ctx.beginPath();
-//     ctx.moveTo(0, 0);
-//     ctx.lineTo(0, MAZE_ROWS * MAZE_GRID_SIZE);
-//     ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, MAZE_ROWS * MAZE_GRID_SIZE);
-//     ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, 0);
-//     ctx.lineTo(0, 0);
-//     ctx.stroke();
-
-//     ctx.beginPath();
-//     for (let i = 0; i < maze.length; i++) {
-//         for (let j = 0; j < maze[i].length; j++) {
-//             const cell = maze[i][j];
-//             if (cell.right && j != maze[i].length - 1) {
-//                 ctx.moveTo((i + 1) * 50, j * 50);
-//                 ctx.lineTo((i + 1) * 50, (j + 1) * 50);
-//             }
-//             if (cell.bottom && i != maze.length - 1) {
-//                 ctx.moveTo(i * 50, (j + 1) * 50);
-//                 ctx.lineTo((i + 1) * 50, (j + 1) * 50);
-//             }
-//         }
-//     }
-//     ctx.stroke();
-
-//     // restore ctx
-//     ctx.restore();
-// }
 
 // Filter
 
