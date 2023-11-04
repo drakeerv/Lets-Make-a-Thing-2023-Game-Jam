@@ -168,11 +168,11 @@ sceneManager.addScene("game", class extends Scene {
         ctx.translate(-this.camera.x, -this.camera.y);
 
         // draw the maze
-        // if (this.lightOn) {
-        this.drawMaze(ctx);
-        ctx.fillStyle = "red";
-        ctx.fillRect(this.enemy.x - 10, this.enemy.y - 10, 20, 20);
-
+        if (this.lightOn) {
+            this.drawMaze(ctx);
+            ctx.fillStyle = "red";
+            ctx.fillRect(this.enemy.x - 10, this.enemy.y - 10, 20, 20);
+        }
         // draw the player
         ctx.fillStyle = "green";
         ctx.fillRect(this.player.x - 10, this.player.y - 10, 20, 20);
