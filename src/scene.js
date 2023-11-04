@@ -14,15 +14,12 @@ class Scene {
 }
 
 class SceneManager {
-    constructor(ctx, scenes = [], overlays = [], filters = []) {
+    constructor(ctx, scenes = [], overlays = []) {
         this.scenes = scenes;
         this.overlays = overlays;
-        this.filters = filters;
-
         this.currentScene = null;
         this.currentOverlay = null;
         this.showOverlay = false;
-        this.currentFiliter = null;
 
         this.ctx = ctx;
     }
@@ -35,20 +32,12 @@ class SceneManager {
         this.overlays[name] = scene;
     }
 
-    addFilter(name, scene) {
-        this.filters[name] = scene;
-    }
-
     getScene(name) {
         return this.scenes[name];
     }
 
     getOverlay(name) {
         return this.overlays[name];
-    }
-
-    getFilter(name) {
-        return this.filters[name];
     }
 
     setCurrentScene(name) {
@@ -67,23 +56,13 @@ class SceneManager {
         }
     }
 
-    setFilterScene(name) {
-        if (this.currentFilter) this.currentFilter.destroy();
-        const scene = this.getFilter(name);
-        if (scene) {
-            this.currentFilter = new scene(name);
-        }
-    }
-
     animate() {
         if (this.currentScene) this.currentScene.animate(this.ctx);
-        if (this.currentFilter) this.currentFilter.animate(this.ctx);
         if (this.overlayScene && this.showOverlay) this.overlayScene.animate(this.ctx);
     }
 
     update(dt) {
         if (this.currentScene) this.currentScene.update(dt);
-        if (this.currentFilter) this.currentFilter.update(dt);
         if (this.overlayScene && this.showOverlay) this.overlayScene.update(dt);
     }
 }

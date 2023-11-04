@@ -246,7 +246,7 @@ sceneManager.addScene("game", class extends Scene {
             ctx.fillRect(ctx.canvas.width - 150, 0, 150, 400);
 
             ctx.fillStyle = "white";
-            ctx.font = "12px Retro";
+            ctx.font = "13px Retro";
 
             ctx.drawImage(assetsLoader.assets.key_w.img, ctx.canvas.width - 150, 0, 50, 50);
             ctx.fillText("Move Forward", ctx.canvas.width - 90, 30);
@@ -562,36 +562,36 @@ sceneManager.addOverlay("debug", class extends Scene {
     }
 });
 
-sceneManager.addFilter("filter", class extends Scene {
-    constructor(name) {
-        super(name);
-    }
+// sceneManager.addFilter("filter", class extends Scene {
+//     constructor(name) {
+//         super(name);
+//     }
 
-    animate(ctx) {
-        ctx.save();
+//     animate(ctx) {
+//         ctx.save();
 
-        // function generateRandomSnow() {
-        //     return ((255 * Math.random()) | 0) << 24;
-        // }
+//         // function generateRandomSnow() {
+//         //     return ((255 * Math.random()) | 0) << 24;
+//         // }
 
-        const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-        const buffer = new Uint32Array(data.data.buffer);
-        // for (let i = 0; i < buffer.length; i++) {
-        //     if (i % 4 == 0) {
-        //         buffer[i] = 0xFF000000;
-        //     } else {
-        //         buffer[i] = generateRandomSnow() + (buffer[i] & 0x00FFFFFF);
-        //     }
-        // }
-        // make faster
-        // for (let i = 0; i < buffer.length; i += 8) {
-        //     buffer[i] = 0xFF000000;
-        // }
-        ctx.putImageData(data, 0, 0);
+//         // const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+//         // const buffer = new Uint32Array(data.data.buffer);
+//         // for (let i = 0; i < buffer.length; i++) {
+//         //     if (i % 4 == 0) {
+//         //         buffer[i] = 0xFF000000;
+//         //     } else {
+//         //         buffer[i] = generateRandomSnow() + (buffer[i] & 0x00FFFFFF);
+//         //     }
+//         // }
+//         // make faster
+//         // for (let i = 0; i < buffer.length; i += 8) {
+//         //     buffer[i] = 0xFF000000;
+//         // }
+//         // ctx.putImageData(data, 0, 0);
 
-        ctx.restore();
-    }
-});
+//         ctx.restore();
+//     }
+// });
 
 // maze = generateMaze(MAZE_COLS, MAZE_ROWS);
 // enemy.x = (MAZE_COLS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
@@ -631,9 +631,53 @@ sceneManager.addFilter("filter", class extends Scene {
 //     ctx.restore();
 // }
 
+// Filter
+
+const filterCanvas = document.getElementById("filter");
+const filterCtx = filterCanvas.getContext("2d", {
+    alpha: true,
+    desynchronized: true
+});
+const filterCanvasHandler = new CanvasHandler(filterCanvas);
+let cachedImageBuffer = null;
+let frame = 0;
+
+function colorToHex(r, g, b, a) {
+    return (a << 24) | (b << 16) | (g << 8) | r;
+}
+
+function generateRandomSnow() {
+    return ((50 * Math.random()) | 0) << 24;
+}
+
+filterCanvasHandler.addResizeListener(() => {
+    const buffer = new Uint32Array(filterCanvas.width * filterCanvas.height);
+
+    for (let x = 0; x < filterCanvas.width; x += 10) {
+        for (let y = 0; y < filterCanvas.height; y++) {
+            buffer[x + y * filterCanvas.width] = colorToHex(0, 0, 0, 50);
+        }
+    }
+    cachedImageBuffer = buffer;
+});
+
+filterCanvasHandler.addAnimateListener(() => {
+    if (frame % 10 == 0) {
+        const buffer = cachedImageBuffer.slice();
+
+        for (let i = 0; i < buffer.length; i++) {
+            buffer[i] += generateRandomSnow();
+        }
+
+        const imageData = new ImageData(new Uint8ClampedArray(buffer.buffer), filterCanvas.width, filterCanvas.height);
+        filterCtx.putImageData(imageData, 0, 0);
+    }
+
+    frame++;
+});
+
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
 
 sceneManager.setCurrentScene("loading");
-sceneManager.setFilterScene("filter");
 sceneManager.setOverlayScene("debug");
