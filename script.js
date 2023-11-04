@@ -4,6 +4,7 @@ import { AssetLoader } from "./src/asset.js";
 import InputSystem from "./src/controller.js";
 import CanvasHandler from "./src/canvas.js";
 import generateMaze from "./src/maze.js";
+import { Scene, SceneManager } from "./src/scene.js";
 
 // Canvas
 
@@ -32,7 +33,9 @@ const assetsSources = {
     "key_d": "assets/keys/d.png",
     "key_space": "assets/keys/space.png",
     "key_q": "assets/keys/q.png",
-    "key_k": "assets/keys/k.png"
+    "key_k": "assets/keys/k.png",
+    "key_escape": "assets/keys/escape.png",
+    "track1": "assets/music/track1.ogg"
 }
 const assetsLoader = new AssetLoader(assetsSources);
 assetsLoader.startLoadAssets();
@@ -45,403 +48,592 @@ const inputSystem = new InputSystem({
     "right": ["d", "ArrowRight"],
     "light": [" "],
     "debug": ["q"],
-    "keys": ["k"]
+    "keys": ["k"],
+    "quit": ["Escape"]
 }, canvas);
 
-// Game
+// Global Variables
 
-const player = {
-    x: MAZE_GRID_SIZE / 2,
-    y: MAZE_GRID_SIZE / 2,
-    velx: 0,
-    vely: 0
-}
-
-const enemy = {
-    x: 0,
-    y: 0,
-    velx: 0,
-    vely: 0
-}
-
-let particles = [];
-let maze = [];
-let debugStats = {
-    show: false,
-    fps: 0,
-    updatesps: 0,
-    canvasSize: "0x0"
-}
-let lightOn = false;
 let showKeys = true;
-let inMainMenu = true;
 
-function drawUI() {
-    // save ctx
-    ctx.save();
+// Scenes
 
-    // make a grey box on theright side of the screen that takes 25% of the screen width and 100% height
-    ctx.drawImage(assetsLoader.assets.table.img, 0, 0, 150, canvas.height);
+const sceneManager = new SceneManager(ctx);
 
-    // draw black and red wires from the top left of the switch to the top of the table
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(25, 0);
-    ctx.lineTo(25, canvas.height / 2);
-    ctx.stroke();
+sceneManager.addScene("game", class extends Scene {
+    constructor(name) {
+        super(name);
 
-    ctx.strokeStyle = "red";
-    ctx.beginPath();
-    ctx.moveTo(30, 0);
-    ctx.lineTo(30, canvas.height / 2);
-    ctx.stroke();
+        this.camera = {
+            x: 0,
+            y: 0
+        }
 
-    // draw a rectangle int the middle of the box that takes up 75% width and 50% height
-    ctx.drawImage(assetsLoader.assets.switch.img, 20, (canvas.height / 2) - 100, 110, 200);
+        this.player = {
+            x: MAZE_GRID_SIZE / 2,
+            y: MAZE_GRID_SIZE / 2,
+            velx: 0,
+            vely: 0
+        }
 
-    // draw a circle in the middle that is black
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(75, canvas.height / 2, 25, 0, Math.PI * 2);
-    ctx.fill();
+        this.enemy = {
+            x: 0,
+            y: 0,
+            velx: 0,
+            vely: 0
+        }
 
-    // if light on then draw a cirle int he down positon, else in the up position
-    if (lightOn) {
-        ctx.fillStyle = "grey";
-        ctx.fillRect(65, canvas.height / 2, 20, 110);
+        this.particles = [];
+        this.maze = [];
+        this.lightOn = false;
 
-        ctx.fillStyle = "red";
-        ctx.beginPath();
-        ctx.arc(75, (canvas.height / 2) + 110, 25, 0, Math.PI * 2);
-        ctx.fill();
-    } else {
-        ctx.fillStyle = "grey";
-        ctx.fillRect(65, canvas.height / 2, 20, -110);
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
 
-        ctx.fillStyle = "red";
-        ctx.beginPath();
-        ctx.arc(75, (canvas.height / 2) - 110, 25, 0, Math.PI * 2);
-        ctx.fill();
+        this.showKeysKeyListener = inputSystem.addKeyPressListener(() => {
+            console.log("toggle keys");
+            showKeys = !showKeys;
+        }, "keys");
+
+        assetsLoader.assets.track1.fadeInAndLoop(10);
     }
 
-    // Draw the keys in the bottomleft corner of the screen and use a faint black background
-    if (showKeys) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.fillRect(canvas.width - 150, 0, 150, 350);
+    drawParticles(ctx) {
+        ctx.save();
 
-        ctx.fillStyle = "white";
-        ctx.font = "12px Arial";
-
-        ctx.drawImage(assetsLoader.assets.key_w.img, canvas.width - 150, 0, 50, 50);
-        ctx.fillText("Move Forward", canvas.width - 90, 30);
-
-        ctx.drawImage(assetsLoader.assets.key_a.img, canvas.width - 150, 50, 50, 50);
-        ctx.fillText("Move Left", canvas.width - 90, 80);
-
-        ctx.drawImage(assetsLoader.assets.key_s.img, canvas.width - 150, 100, 50, 50);
-        ctx.fillText("Move Backward", canvas.width - 90, 130);
-
-        ctx.drawImage(assetsLoader.assets.key_d.img, canvas.width - 150, 150, 50, 50);
-        ctx.fillText("Move Right", canvas.width - 90, 180);
-
-        ctx.drawImage(assetsLoader.assets.key_space.img, canvas.width - 150, 200, 50, 50);
-        ctx.fillText("Toggle Light", canvas.width - 90, 230);
-
-        ctx.drawImage(assetsLoader.assets.key_q.img, canvas.width - 150, 250, 50, 50);
-        ctx.fillText("Toggle Debug", canvas.width - 90, 280);
-
-        ctx.drawImage(assetsLoader.assets.key_k.img, canvas.width - 150, 300, 50, 50);
-        ctx.fillText("Toggle Keys", canvas.width - 90, 330);
-    }
-
-    // restore ctx
-    ctx.restore();
-}
-
-maze = generateMaze(MAZE_COLS, MAZE_ROWS);
-enemy.x = (MAZE_COLS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
-enemy.y = (MAZE_ROWS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
-console.log(maze);
-function drawMaze() {
-    // save ctx
-    ctx.save();
-
-    // draw maze
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, MAZE_ROWS * MAZE_GRID_SIZE);
-    ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, MAZE_ROWS * MAZE_GRID_SIZE);
-    ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, 0);
-    ctx.lineTo(0, 0);
-    ctx.stroke();
-
-    ctx.beginPath();
-    for (let i = 0; i < maze.length; i++) {
-        for (let j = 0; j < maze[i].length; j++) {
-            const cell = maze[i][j];
-            if (cell.right && j != maze[i].length - 1) {
-                ctx.moveTo((i + 1) * 50, j * 50);
-                ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+        this.particles.forEach((particle) => {
+            if (!particle.relative) {
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
             }
-            if (cell.bottom && i != maze.length - 1) {
-                ctx.moveTo(i * 50, (j + 1) * 50);
-                ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+        });
+
+        // draw particles
+        ctx.translate(-this.camera.x, -this.camera.y);
+        this.particles.forEach((particle) => {
+            if (particle.relative) {
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        ctx.restore();
+    }
+
+    drawMaze(ctx) {
+        ctx.save();
+
+        // draw maze
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, MAZE_ROWS * MAZE_GRID_SIZE);
+        ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, MAZE_ROWS * MAZE_GRID_SIZE);
+        ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, 0);
+        ctx.lineTo(0, 0);
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = 0; i < this.maze.length; i++) {
+            for (let j = 0; j < this.maze[i].length; j++) {
+                const cell = this.maze[i][j];
+                if (cell.right && j != this.maze[i].length - 1) {
+                    ctx.moveTo((i + 1) * 50, j * 50);
+                    ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+                }
+                if (cell.bottom && i != this.maze.length - 1) {
+                    ctx.moveTo(i * 50, (j + 1) * 50);
+                    ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+                }
             }
         }
+        ctx.stroke();
+
+        ctx.restore();
     }
-    ctx.stroke();
 
-    // restore ctx
-    ctx.restore();
-}
+    drawGame(ctx) {
+        // save ctx
+        // everything is relative to the player as the camera is fixed onto the player
+        ctx.save();
+        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
 
-function drawLoadingScene() {
-    // save ctx
-    ctx.save();
+        // translate to the cameras's position
+        ctx.translate(-this.camera.x, -this.camera.y);
 
-    // draw text
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Loading...", canvas.width / 2, canvas.height / 2);
+        // draw the maze
+        // if (this.lightOn) {
+        this.drawMaze(ctx);
+        ctx.fillStyle = "red";
+        ctx.fillRect(this.enemy.x - 10, this.enemy.y - 10, 20, 20);
 
-    // between the two draw the current asset loading
-    ctx.fillText(assetsLoader.currentAssetLoading, canvas.width / 2, canvas.height / 2 + 30);
+        // draw the player
+        ctx.fillStyle = "green";
+        ctx.fillRect(this.player.x - 10, this.player.y - 10, 20, 20);
 
-    // draw progress bar below text
-    ctx.fillStyle = "transparent";
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200, 20);
+        // draw particles
+        for (let i = 0; i < this.particles.length; i++) {
+            const particle = this.particles[i];
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            if (particle.relative) {
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            }
+            ctx.fill();
+        }
 
-    ctx.fillStyle = "white";
-    ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200 * assetsLoader.getLoadedPercentage(), 20);
+        // finish drawing
+        ctx.restore();
+    }
 
-    // restore ctx
-    ctx.restore();
-}
+    drawUI(ctx) {
+        ctx.save();
 
-function drawMenuScene() {
-    // draw play buttton and title
+        // make a grey box on theright side of the screen that takes 25% of the screen width and 100% height
+        ctx.drawImage(assetsLoader.assets.table.img, 0, 0, 150, ctx.canvas.height);
 
-    // save ctx
-    ctx.save();
-
-    // draw text
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Maze Game", canvas.width / 2, canvas.height / 2);
-
-    // draw play button
-    ctx.fillStyle = "transparent";
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200, 20);
-
-    ctx.fillStyle = "white";
-    ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200, 20);
-
-    // draw play text
-    ctx.fillStyle = "black";
-    ctx.font = "15px Arial";
-    ctx.fillText("Play", canvas.width / 2, canvas.height / 2 + 65);
-
-    // restore ctx
-    ctx.restore();
-}
-
-function drawGameScene() {
-    // save ctx
-    // everything is relative to the player as the camera is fixed onto the player
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-
-    // draw the player
-    ctx.fillStyle = "green";
-    ctx.fillRect(-10, -10, 20, 20);
-
-    // translate to the player's position
-    ctx.translate(-player.x, -player.y);
-
-    // draw the maze
-    // if (lightOn) {
-    drawMaze();
-    ctx.fillStyle = "red";
-    ctx.fillRect(enemy.x - 10, enemy.y - 10, 20, 20);
-
-    // draw the enemy img
-    // ctx.imageSmoothingEnabled = false;
-    // ctx.drawImage(assetLoader.assets.enemy_idle.img, enemy.x - 50, enemy.y - 50, 100, 100);
-    // ctx.imageSmoothingEnabled = true;
-    // }
-
-    // draw particles
-    for (let i = 0; i < particles.length; i++) {
-        const particle = particles[i];
-        ctx.fillStyle = particle.color;
+        // draw black and red wires from the top left of the switch to the top of the table
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 5;
         ctx.beginPath();
-        if (particle.relative) {
-            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        }
-        ctx.fill();
-    }
+        ctx.moveTo(25, 0);
+        ctx.lineTo(25, ctx.canvas.height / 2);
+        ctx.stroke();
 
-    // finish drawing
-    ctx.restore();
-
-    // draw ui on top of everything
-    drawUI();
-}
-
-
-canvasHandler.addAnimateListener(() => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // draw loading screen
-    ctx.save();
-    if (assetsLoader.loading) {
-        drawLoadingScene();
-    } else if (inMainMenu) {
-        drawMenuScene();
-    } else {
-        drawGameScene();
-    }
-    ctx.restore();
-
-    // draw debug
-    ctx.fillStyle = "white";
-    ctx.font = "15px Arial";
-
-    if (debugStats.show) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, 150, 80);
-        ctx.fillStyle = "white";
-        ctx.fillText("Updatesps: " + debugStats.updatesps, 10, 20);
-        ctx.fillText("FPS: " + debugStats.fps, 10, 40);
-        ctx.fillText("Canvas Size: " + debugStats.canvasSize, 10, 60);
-    }
-
-
-    // draw particles
-    for (let i = 0; i < particles.length; i++) {
-        const particle = particles[i];
-        ctx.fillStyle = particle.color;
+        ctx.strokeStyle = "red";
         ctx.beginPath();
-        if (!particle.relative) {
-            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        }
+        ctx.moveTo(30, 0);
+        ctx.lineTo(30, ctx.canvas.height / 2);
+        ctx.stroke();
+
+        // draw a rectangle int the middle of the box that takes up 75% width and 50% height
+        ctx.drawImage(assetsLoader.assets.switch.img, 20, (ctx.canvas.height / 2) - 100, 110, 200);
+
+        // draw a circle in the middle that is black
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(75, ctx.canvas.height / 2, 25, 0, Math.PI * 2);
         ctx.fill();
-    }
-});
 
-function updateLoadingScene(dt) {
-}
+        // if light on then draw a cirle int he down positon, else in the up position
+        if (this.lightOn) {
+            ctx.fillStyle = "grey";
+            ctx.fillRect(65, ctx.canvas.height / 2, 20, 110);
 
-function updateMenuScene(dt) {
-    // see if mouse is within the play button
-    // console.log(inputSystem.mouse);
-    // inputSystem.mouse is relative to the canvas
-    if (inputSystem.mouse.x > canvas.width / 2 - 100 && inputSystem.mouse.x < canvas.width / 2 + 100) {
-        if (inputSystem.mouse.y > canvas.height / 2 + 50 && inputSystem.mouse.y < canvas.height / 2 + 70) {
-            canvasHandler.changeCursor("pointer");
-        }
-    }
-}
-
-function updateGameScene(dt) {
-    // Light switch
-    if (inputSystem.isActionHeld("light") != lightOn) {
-        lightOn = !lightOn;
-
-        for (let i = 0; i < 10; i++) {
-            particles.push({
-                gravity: 9.8,
-                x: 75,
-                y: canvas.height / 2,
-                velx: Math.random() * 100 - 50,
-                vely: Math.random() * 100 - 50,
-                color: "rgba(211, 211, 211, 0.25)",
-                size: Math.random() * 5 + 5,
-                relative: false,
-                lifetime: 2
-            })
-        }
-
-        assetsLoader.assets.switch_sound.playFromStart();
-    }
-
-    // Player
-    if (!lightOn) {
-        if (inputSystem.isActionHeld("forward")) {
-            player.vely = -100;
-        }
-        if (inputSystem.isActionHeld("backward")) {
-            player.vely = 100;
-        }
-
-        if (inputSystem.isActionHeld("left")) {
-            player.velx = -100;
-        }
-        if (inputSystem.isActionHeld("right")) {
-            player.velx = 100;
-        }
-
-        if (!inputSystem.isActionHeld("forward") && !inputSystem.isActionHeld("backward")) {
-            player.vely = 0;
-        }
-        if (!inputSystem.isActionHeld("left") && !inputSystem.isActionHeld("right")) {
-            player.velx = 0;
-        }
-    } else {
-        player.velx = 0;
-        player.vely = 0;
-    }
-
-    player.x += player.velx * dt;
-    player.y += player.vely * dt;
-
-    // Enemy
-    enemy.x += enemy.velx * dt;
-    enemy.y += enemy.vely * dt;
-}
-
-canvasHandler.addUpdateListener((dt) => {
-    if (assetsLoader.loading) {
-        updateLoadingScene(dt);
-    } else if (inMainMenu) {
-        updateMenuScene(dt);
-    } else {
-        updateGameScene(dt);
-    }
-
-    // Particles
-    particles.forEach((particle) => {
-        if (particle.lifetime > 0) {
-            particle.lifetime -= dt;
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(75, (ctx.canvas.height / 2) + 110, 25, 0, Math.PI * 2);
+            ctx.fill();
         } else {
-            particles.splice(particles.indexOf(particle), 1);
-            return;
+            ctx.fillStyle = "grey";
+            ctx.fillRect(65, ctx.canvas.height / 2, 20, -110);
+
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(75, (ctx.canvas.height / 2) - 110, 25, 0, Math.PI * 2);
+            ctx.fill();
         }
 
-        particle.vely -= particle.gravity * dt;
-        particle.x += particle.velx * dt;
-        particle.y += particle.vely * dt;
-    });
+        // Draw the keys in the bottomleft corner of the screen and use a faint black background
+        if (showKeys) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.fillRect(ctx.canvas.width - 150, 0, 150, 400);
 
-    // Debug
-    debugStats.canvasSize = canvas.width + "x" + canvas.height;
-    debugStats.updatesps = Math.round(canvasHandler.updatesps);
-    debugStats.fps = Math.round(canvasHandler.fps);
+            ctx.fillStyle = "white";
+            ctx.font = "12px Retro";
+
+            ctx.drawImage(assetsLoader.assets.key_w.img, ctx.canvas.width - 150, 0, 50, 50);
+            ctx.fillText("Move Forward", ctx.canvas.width - 90, 30);
+
+            ctx.drawImage(assetsLoader.assets.key_a.img, ctx.canvas.width - 150, 50, 50, 50);
+            ctx.fillText("Move Left", ctx.canvas.width - 90, 80);
+
+            ctx.drawImage(assetsLoader.assets.key_s.img, ctx.canvas.width - 150, 100, 50, 50);
+            ctx.fillText("Move Backward", ctx.canvas.width - 90, 130);
+
+            ctx.drawImage(assetsLoader.assets.key_d.img, ctx.canvas.width - 150, 150, 50, 50);
+            ctx.fillText("Move Right", ctx.canvas.width - 90, 180);
+
+            ctx.drawImage(assetsLoader.assets.key_space.img, ctx.canvas.width - 150, 200, 50, 50);
+            ctx.fillText("Toggle Light", ctx.canvas.width - 90, 230);
+
+            ctx.drawImage(assetsLoader.assets.key_q.img, ctx.canvas.width - 150, 250, 50, 50);
+            ctx.fillText("Toggle Debug", ctx.canvas.width - 90, 280);
+
+            ctx.drawImage(assetsLoader.assets.key_k.img, ctx.canvas.width - 150, 300, 50, 50);
+            ctx.fillText("Toggle Keys", ctx.canvas.width - 90, 330);
+
+            ctx.drawImage(assetsLoader.assets.key_escape.img, ctx.canvas.width - 150, 350, 50, 50);
+            ctx.fillText("Quit", ctx.canvas.width - 90, 380);
+        }
+
+        ctx.restore();
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        this.drawGame(ctx);
+        this.drawUI(ctx);
+        this.drawParticles(ctx);
+    }
+
+    updateParticles(dt) {
+        this.particles.forEach((particle) => {
+            if (particle.lifetime > 0) {
+                particle.lifetime -= dt;
+            } else {
+                this.particles.splice(this.particles.indexOf(particle), 1);
+                return;
+            }
+
+            particle.vely -= particle.gravity * dt;
+            particle.x += particle.velx * dt;
+            particle.y += particle.vely * dt;
+        });
+    }
+
+    update(dt) {
+        this.updateParticles(dt);
+
+        // Light switch
+        if (inputSystem.isActionHeld("light") != this.lightOn) {
+            this.lightOn = !this.lightOn;
+
+            for (let i = 0; i < 10; i++) {
+                this.particles.push({
+                    gravity: 9.8,
+                    x: 75,
+                    y: canvas.height / 2,
+                    velx: Math.random() * 100 - 50,
+                    vely: Math.random() * 100 - 50,
+                    color: "rgba(211, 211, 211, 0.25)",
+                    size: Math.random() * 5 + 5,
+                    relative: false,
+                    lifetime: 2
+                })
+            }
+
+            assetsLoader.assets.switch_sound.playFromStart();
+        }
+
+        // Player
+        if (!this.lightOn) {
+            if (inputSystem.isActionHeld("forward")) {
+                this.player.vely = -100;
+            }
+            if (inputSystem.isActionHeld("backward")) {
+                this.player.vely = 100;
+            }
+
+            if (inputSystem.isActionHeld("left")) {
+                this.player.velx = -100;
+            }
+            if (inputSystem.isActionHeld("right")) {
+                this.player.velx = 100;
+            }
+
+            if (!inputSystem.isActionHeld("forward") && !inputSystem.isActionHeld("backward")) {
+                this.player.vely = 0;
+            }
+            if (!inputSystem.isActionHeld("left") && !inputSystem.isActionHeld("right")) {
+                this.player.velx = 0;
+            }
+
+            if (inputSystem.isActionHeld("forward") && inputSystem.isActionHeld("backward")) {
+                this.player.vely = 0;
+            }
+            if (inputSystem.isActionHeld("left") && inputSystem.isActionHeld("right")) {
+                this.player.velx = 0;
+            }
+        } else {
+            this.player.velx = 0;
+            this.player.vely = 0;
+        }
+
+        this.player.x += this.player.velx * dt;
+        this.player.y += this.player.vely * dt;
+
+        // Enemy
+        this.enemy.x += this.enemy.velx * dt;
+        this.enemy.y += this.enemy.vely * dt;
+
+        // Camera
+        this.camera.x = this.player.x;
+        this.camera.y = this.player.y;
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeKeyPressListener(this.showKeysKeyListener, "keys");
+        assetsLoader.assets.track1.fadeOutAndStop(10);
+    }
 });
 
-inputSystem.addKeyPressListener(() => {
-    debugStats.show = !debugStats.show;
-}, "debug");
+sceneManager.addScene("options", class extends Scene {
+    constructor(name) {
+        super(name);
 
-inputSystem.addKeyPressListener(() => {
-    showKeys = !showKeys;
-}, "keys");
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("Options", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw back buttton and title
+
+        // draw back button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
+
+        // draw back text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Back", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+
+        ctx.restore();
+    }
+
+    update(dt) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+            canvasHandler.changeCursor("pointer");
+
+            if (inputSystem.mouse.left) {
+                canvasHandler.changeCursor("default");
+                sceneManager.setCurrentScene("menu");
+            }
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+    }
+});
+
+sceneManager.addScene("menu", class extends Scene {
+    constructor(name) {
+        super(name);
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("Maze Game", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw play buttton and title
+
+        // draw play button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 50, 200, 20);
+
+        // draw play text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Play", ctx.canvas.width / 2, ctx.canvas.height / 2 + 65);
+
+        // draw options button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 100, 200, 20);
+
+        // draw options text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Options", ctx.canvas.width / 2, ctx.canvas.height / 2 + 115);
+
+        ctx.restore();
+    }
+
+    update(dt) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
+            if (inputSystem.mouse.y > ctx.canvas.height / 2 + 50 && inputSystem.mouse.y < ctx.canvas.height / 2 + 70) {
+                // Play
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    canvasHandler.changeCursor("default");
+                    sceneManager.setCurrentScene("game");
+                }
+            } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 100 && inputSystem.mouse.y < ctx.canvas.height / 2 + 120) {
+                // Options
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    sceneManager.setCurrentScene("options");
+                    canvasHandler.changeCursor("default");
+                }
+            } else {
+                canvasHandler.changeCursor("default");
+            }
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+    }
+});
+
+sceneManager.addScene("loading", class extends Scene {
+    constructor(name) {
+        super(name);
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("Loading...", canvas.width / 2, canvas.height / 2);
+
+        // between the two draw the current asset loading
+        ctx.fillText(assetsLoader.currentAssetLoading, canvas.width / 2, canvas.height / 2 + 30);
+
+        // draw progress bar below text
+        ctx.fillStyle = "transparent";
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200, 20);
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200 * assetsLoader.getLoadedPercentage(), 20);
+        ctx.restore();
+    }
+
+    update(dt) {
+        if (!assetsLoader.loading) {
+            sceneManager.setCurrentScene("menu");
+        }
+    }
+});
+
+sceneManager.addOverlay("debug", class extends Scene {
+    constructor(name) {
+        super(name);
+
+        this.debugStats = {
+            fps: 0,
+            updatesps: 0,
+            canvasSize: "0x0"
+        }
+
+        this.debugKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.showOverlay = !sceneManager.showOverlay;
+        }, "debug");
+    }
+
+    animate(ctx) {
+        ctx.save();
+
+        ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, 150, 120);
+        ctx.fillStyle = "white";
+        ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), 10, 20);
+        ctx.fillText("FPS: " + Math.round(canvasHandler.fps), 10, 40);
+        ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, 10, 60);
+        ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, 10, 80);
+        ctx.fillText("Current Scene: " + sceneManager.currentScene.name, 10, 100);
+
+        ctx.restore();
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.debugKeyListener, "debug");
+    }
+});
+
+sceneManager.addFilter("filter", class extends Scene {
+    constructor(name) {
+        super(name);
+    }
+
+    animate(ctx) {
+        ctx.save();
+
+        // function generateRandomSnow() {
+        //     return ((255 * Math.random()) | 0) << 24;
+        // }
+
+        const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const buffer = new Uint32Array(data.data.buffer);
+        // for (let i = 0; i < buffer.length; i++) {
+        //     if (i % 4 == 0) {
+        //         buffer[i] = 0xFF000000;
+        //     } else {
+        //         buffer[i] = generateRandomSnow() + (buffer[i] & 0x00FFFFFF);
+        //     }
+        // }
+        // make faster
+        // for (let i = 0; i < buffer.length; i += 8) {
+        //     buffer[i] = 0xFF000000;
+        // }
+        ctx.putImageData(data, 0, 0);
+
+        ctx.restore();
+    }
+});
+
+// maze = generateMaze(MAZE_COLS, MAZE_ROWS);
+// enemy.x = (MAZE_COLS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
+// enemy.y = (MAZE_ROWS * MAZE_GRID_SIZE) - MAZE_GRID_SIZE / 2;
+// function drawMaze() {
+//     // save ctx
+//     ctx.save();
+
+//     // draw maze
+//     ctx.strokeStyle = "white";
+//     ctx.lineWidth = 5;
+//     ctx.beginPath();
+//     ctx.moveTo(0, 0);
+//     ctx.lineTo(0, MAZE_ROWS * MAZE_GRID_SIZE);
+//     ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, MAZE_ROWS * MAZE_GRID_SIZE);
+//     ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, 0);
+//     ctx.lineTo(0, 0);
+//     ctx.stroke();
+
+//     ctx.beginPath();
+//     for (let i = 0; i < maze.length; i++) {
+//         for (let j = 0; j < maze[i].length; j++) {
+//             const cell = maze[i][j];
+//             if (cell.right && j != maze[i].length - 1) {
+//                 ctx.moveTo((i + 1) * 50, j * 50);
+//                 ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+//             }
+//             if (cell.bottom && i != maze.length - 1) {
+//                 ctx.moveTo(i * 50, (j + 1) * 50);
+//                 ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+//             }
+//         }
+//     }
+//     ctx.stroke();
+
+//     // restore ctx
+//     ctx.restore();
+// }
+
+canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
+canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
+
+sceneManager.setCurrentScene("loading");
+sceneManager.setFilterScene("filter");
+sceneManager.setOverlayScene("debug");

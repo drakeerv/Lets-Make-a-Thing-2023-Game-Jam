@@ -7,6 +7,7 @@ class InputSystem {
         this.heldKeys = [];
         this.keyPressListeners = {};
         this.mouse = {x: 0, y: 0, left: false, right: false, middle: false};
+        this.currentId = 0;
 
         this._setupListeners();
     }
@@ -67,7 +68,7 @@ class InputSystem {
         const key = event.key;
         const action = this.getActionFromKey(key);
         if (action && this.keyPressListeners[action]) {
-            this.keyPressListeners[action].forEach(callback => callback());
+            this.keyPressListeners[action].forEach(data => data.callback());
         }
     }
 
@@ -76,7 +77,20 @@ class InputSystem {
             this.keyPressListeners[action] = [];
         }
 
-        this.keyPressListeners[action].push(callback);
+        this.keyPressListeners[action].push({
+            id: this.currentId++,
+            callback: callback
+        });
+
+        return this.currentId - 1;
+    }
+
+    removeKeyPressListener(id, action) {
+        if (!this.keyPressListeners[action]) return;
+        const index = this.keyPressListeners[action].findIndex(listener => listener.id === id);
+        if (index > -1) {
+            this.keyPressListeners[action].splice(index, 1);
+        }
     }
 
     _setupListeners() {

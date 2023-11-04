@@ -123,6 +123,39 @@ class AudioAsset extends BaseAsset {
         this.audio.pause();
         this.audio.currentTime = 0;
     }
+
+    loop() {
+        if (!this.loaded) return;
+        this.audio.loop = true;
+        this.audio.play();
+    }
+
+    fadeOutAndStop(time) {
+        if (!this.loaded) return;
+        const volumeLeft = this.audio.volume;
+        const volumeStep = volumeLeft / time;
+        const interval = setInterval(() => {
+            this.audio.volume = Math.max(0, this.audio.volume - volumeStep);
+            if (this.audio.volume <= 0) {
+                clearInterval(interval);
+                this.stop();
+            }
+        }, time * 10);
+    }
+
+    fadeInAndLoop(time) {
+        if (!this.loaded) return;
+        this.audio.loop = true;
+        this.audio.volume = 0;
+        this.audio.play();
+        const volumeStep = 1 / time;
+        const interval = setInterval(() => {
+            this.audio.volume = Math.min(1, this.audio.volume + volumeStep);
+            if (this.audio.volume >= 1) {
+                clearInterval(interval);
+            }
+        }, time * 10);
+    }
 }
 
 function resolveAsset(src) {
@@ -144,6 +177,7 @@ class AssetLoader {
         this.totalAssets = this.loadingPaths.length;
         this.currentAssetLoading = this.loadingPaths[0];
         this.assets = {};
+        this.loadCallbacks = [];
     }
 
     startLoadAssets() {
@@ -154,6 +188,7 @@ class AssetLoader {
                 this.totalLoaded++;
                 if (this.totalLoaded == this.totalAssets) {
                     this.loading = false;
+                    this.loadCallbacks.forEach(callback => callback());
                 } else {
                     this.loadingPaths = this.loadingPaths.filter(path => path != src);
                     this.currentAssetLoading = this.loadingPaths[0];
@@ -162,6 +197,15 @@ class AssetLoader {
             this.assets[name] = asset;
         }
     }
+
+    onLoad(callback) {
+        if (!this.loading) {
+            callback();
+        } else {
+            this.loadCallbacks.push(callback);
+        }
+    }
+
     getLoadedPercentage() {
         return this.totalLoaded / this.totalAssets;
     }
