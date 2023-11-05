@@ -17,7 +17,8 @@ const canvasHandler = new CanvasHandler(canvas);
 
 // Constants
 
-const MAZE_GRID_SIZE = 50;
+const MAZE_GRID_SIZE = 100;
+const MAZE_LINE_WIDTH = 10;
 const MAZE_COLS = 10;
 const MAZE_ROWS = 20;
 
@@ -96,7 +97,7 @@ sceneManager.addScene("game", class extends Scene {
             showKeys = !showKeys;
         }, "keys");
 
-        assetsLoader.assets.track1.fadeInAndLoop(10);
+        assetsLoader.assets.track1.fadeInAndLoop(10, 0.4);
     }
 
     drawParticles(ctx) {
@@ -130,7 +131,7 @@ sceneManager.addScene("game", class extends Scene {
 
         // draw maze
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 5;
+        ctx.lineWidth = MAZE_LINE_WIDTH;
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.maze.length * MAZE_GRID_SIZE);
@@ -140,16 +141,18 @@ sceneManager.addScene("game", class extends Scene {
         ctx.stroke();
 
         ctx.beginPath();
-        for (let i = 0; i < this.maze.length; i++) {
-            for (let j = 0; j < this.maze[i].length; j++) {
-                const cell = this.maze[i][j];
-                if (cell.right && j != this.maze[i].length - 1) {
-                    ctx.moveTo((i + 1) * 50, j * 50);
-                    ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+        for (let y = 0; y < this.maze.length; y++) {
+            for (let x = 0; x < this.maze[y].length; x++) {
+                const cell = this.maze[y][x];
+
+                if (cell.right && x != this.maze[y].length - 1) {
+                    ctx.moveTo((x + 1) * MAZE_GRID_SIZE, y * MAZE_GRID_SIZE);
+                    ctx.lineTo((x + 1) * MAZE_GRID_SIZE, (y + 1) * MAZE_GRID_SIZE);
                 }
-                if (cell.bottom && i != this.maze.length - 1) {
-                    ctx.moveTo(i * 50, (j + 1) * 50);
-                    ctx.lineTo((i + 1) * 50, (j + 1) * 50);
+
+                if (cell.bottom && y != this.maze.length - 1) {
+                    ctx.moveTo(x * MAZE_GRID_SIZE, (y + 1) * MAZE_GRID_SIZE);
+                    ctx.lineTo((x + 1) * MAZE_GRID_SIZE, (y + 1) * MAZE_GRID_SIZE);
                 }
             }
         }
@@ -173,6 +176,7 @@ sceneManager.addScene("game", class extends Scene {
             ctx.fillStyle = "red";
             ctx.fillRect(this.enemy.x - 10, this.enemy.y - 10, 20, 20);
         }
+
         // draw the player
         ctx.fillStyle = "green";
         ctx.fillRect(this.player.x - 10, this.player.y - 10, 20, 20);
@@ -341,41 +345,37 @@ sceneManager.addScene("game", class extends Scene {
                 this.player.velx = 0;
             }
 
-            if (this.player.velx > 0 || this.player.vely > 0) {
-                const cellX = (this.player.x / MAZE_GRID_SIZE) | 0;
-                const cellY = (this.player.y / MAZE_GRID_SIZE) | 0;
-                const mazeCell = this.maze[cellY][cellX];
+            const cellX = Math.floor(this.player.x / MAZE_GRID_SIZE);
+            const cellY = Math.floor(this.player.y / MAZE_GRID_SIZE) | 0;
+            const mazeCell = this.maze[cellY] != undefined && this.maze[cellY][cellX];
 
-                const futureX = this.player.x + (this.player.velx * dt);
-                const futureY = this.player.y + (this.player.vely * dt);
+            const futureX = this.player.x + (this.player.velx * dt);
+            const futureY = this.player.y + (this.player.vely * dt);
+            
+            const futureCellX = Math.floor(futureX / MAZE_GRID_SIZE);
+            const futureCellY = Math.floor(futureY / MAZE_GRID_SIZE);
+
+            const enterFutureRight = futureX > this.player.x && futureCellX != cellX;
+            const enterFutureLeft = futureX < this.player.x && futureCellX != cellX;
+            const enterFutureBottom = futureY > this.player.y && futureCellY != cellY;
+            const enterFutureTop = futureY < this.player.y && futureCellY != cellY;
+
+            if (mazeCell) {
+                const hasTopFace = (cellY == 0) || (this.maze[cellY - 1] && this.maze[cellY - 1][cellX].bottom);
+                const hasLeftFace = (cellX == 0) || (this.maze[cellY][cellX - 1] && this.maze[cellY][cellX - 1].right);
+                const hasBottomFace = mazeCell.bottom;
+                const hasRightFace = mazeCell.right;
+
+                if (enterFutureRight && hasRightFace) {
+                    this.player.velx = 0;
+                } else if (enterFutureLeft && hasLeftFace) {
+                    this.player.velx = 0;
+                }
                 
-                const futureCellX = (futureX / MAZE_GRID_SIZE) | 0;
-                const futureCellY = (futureY / MAZE_GRID_SIZE) | 0;
-                const futureMazeCell = this.maze[futureCellY][futureCellX];
-
-                if (mazeCell) {
-                    const xPositionInCell = (this.player.x % MAZE_GRID_SIZE) + (this.player.velx * dt);
-                    const yPositionInCell = (this.player.y % MAZE_GRID_SIZE) + (this.player.vely * dt);
-
-                    const hasTopFace = (cellY == 0) || (this.maze[cellY - 1] && this.maze[cellY - 1][cellX].bottom);
-                    const hasLeftFace = (cellX == 0) || (this.maze[cellY][cellX - 1] && this.maze[cellY][cellX - 1].right);
-                    const hasBottomFace = mazeCell.bottom;
-                    const hasRightFace = mazeCell.right;
-
-                    if (xPositionInCell < 5) {
-                        console.log(xPositionInCell);
-                        this.player.velx = 0;
-                        this.player.x = 5;
-                    } else if (xPositionInCell > MAZE_GRID_SIZE - 5) {
-                        this.player.velx = 0;
-                        this.player.x = MAZE_GRID_SIZE - 5;
-                    }
-
-                    if (yPositionInCell < 5) {
-
-                    } else if (yPositionInCell > MAZE_GRID_SIZE - 5) {
-
-                    }
+                if (enterFutureBottom && hasBottomFace) {
+                    this.player.vely = 0;
+                } else if (enterFutureTop && hasTopFace) {
+                    this.player.vely = 0;
                 }
             }
         } else {
@@ -592,47 +592,146 @@ sceneManager.addOverlay("debug", class extends Scene {
 // Filter
 
 const filterCanvas = document.getElementById("filter");
-const filterCtx = filterCanvas.getContext("2d", {
-    alpha: true,
+const filterCanvasHandler = new CanvasHandler(filterCanvas);
+const filterGl = filterCanvas.getContext("webgl2", {
     desynchronized: true
 });
-const filterCanvasHandler = new CanvasHandler(filterCanvas);
-let cachedImageBuffer = null;
-let frame = 0;
 
-function colorToHex(r, g, b, a) {
-    return (a << 24) | (b << 16) | (g << 8) | r;
-}
+const filterProgram = filterGl.createProgram();
+const filterVertShader = filterGl.createShader(filterGl.VERTEX_SHADER);
+const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
 
-function generateRandomSnow() {
-    return ((75 * Math.random()) | 0) << 24;
-}
+filterGl.shaderSource(filterVertShader, `
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+
+    varying vec2 v_texCoord;
+
+    void main() {
+        gl_Position = vec4(a_position, 0, 1);
+        v_texCoord = a_texCoord;
+    }
+`);
+
+filterGl.shaderSource(filterFragShader, `
+    precision mediump float;
+
+    uniform sampler2D u_image;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+
+    varying vec2 v_texCoord;
+
+    const float SCANLINE_STRENGTH = 0.1;
+    const float SCANLINE_WIDTH = 3.0;
+    const float SNOW_STRENGTH = 0.2;
+    const float VIGNETTE_STRENGTH = 0.3;
+    const float VIGNETTE_SIZE = 2.0;
+
+    float rand(vec2 co){
+        return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+    
+    void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        float r = rand(v_texCoord + u_time);
+
+        // setup
+        float x = v_texCoord.x * u_resolution.x;
+        float y = v_texCoord.y * u_resolution.y;
+        color.a = 0.0;
+
+        // scanlines
+        if (mod(x, 10.0) <= SCANLINE_WIDTH) {
+            color.a = SCANLINE_STRENGTH;
+        }
+
+        // snow
+        color.a += r * SNOW_STRENGTH;
+
+        // vignette
+        vec2 center = u_resolution / 2.0;
+        vec2 pos = vec2(x, y);
+        vec2 halfSize = u_resolution.xy / 2.0;
+        float distance = length((pos - center) / halfSize);
+        float alpha = pow(distance, VIGNETTE_SIZE);
+        color.a += alpha * VIGNETTE_STRENGTH;
+
+        // clamp
+        color.a = clamp(color.a, 0.0, 1.0);
+        
+        // color
+        gl_FragColor = color;
+    }
+`);
+
+filterGl.compileShader(filterVertShader);
+filterGl.compileShader(filterFragShader);
+
+filterGl.attachShader(filterProgram, filterVertShader);
+filterGl.attachShader(filterProgram, filterFragShader);
+
+filterGl.linkProgram(filterProgram);
+filterGl.useProgram(filterProgram);
+
+const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
+const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
+const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
+const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
+
+const filterPositionBuffer = filterGl.createBuffer();
+filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
+filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+    -1, -1,
+    1, -1,
+    -1, 1,
+    -1, 1,
+    1, -1,
+    1, 1
+]), filterGl.STATIC_DRAW);
+
+const filterTexCoordBuffer = filterGl.createBuffer();
+filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
+filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+    0, 0,
+    1, 0,
+    0, 1,
+    0, 1,
+    1, 0,
+    1, 1
+]), filterGl.STATIC_DRAW);
+
+const filterTexture = filterGl.createTexture();
+filterGl.bindTexture(filterGl.TEXTURE_2D, filterTexture);
+filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_S, filterGl.CLAMP_TO_EDGE);
+filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_T, filterGl.CLAMP_TO_EDGE);
+filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MIN_FILTER, filterGl.NEAREST);
+filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MAG_FILTER, filterGl.NEAREST);
 
 filterCanvasHandler.addResizeListener(() => {
-    const buffer = new Uint32Array(filterCanvas.width * filterCanvas.height);
-
-    for (let x = 0; x < filterCanvas.width; x += 10) {
-        for (let y = 0; y < filterCanvas.height; y++) {
-            buffer[x + y * filterCanvas.width] = colorToHex(0, 0, 0, 50);
-        }
-    }
-    cachedImageBuffer = buffer;
+    filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
 });
 
-// filterCanvasHandler.addAnimateListener(() => {
-//     if (frame % 10 == 0) {
-//         const buffer = cachedImageBuffer.slice();
+filterCanvasHandler.addAnimateListener(() => {
+    filterGl.clearColor(1, 1, 1, 1);
+    filterGl.colorMask(true, true, true, true);
+    filterGl.clear(filterGl.COLOR_BUFFER_BIT);
 
-//         for (let i = 0; i < buffer.length; i++) {
-//             buffer[i] += generateRandomSnow();
-//         }
+    filterGl.useProgram(filterProgram);
 
-//         const imageData = new ImageData(new Uint8ClampedArray(buffer.buffer), filterCanvas.width, filterCanvas.height);
-//         filterCtx.putImageData(imageData, 0, 0);
-//     }
+    filterGl.enableVertexAttribArray(filterPositionLocation);
+    filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
+    filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
 
-//     frame++;
-// });
+    filterGl.enableVertexAttribArray(filterTexCoordLocation);
+    filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
+    filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+    filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
+    filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+
+    filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+});
 
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));

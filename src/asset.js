@@ -143,15 +143,15 @@ class AudioAsset extends BaseAsset {
         }, time * 10);
     }
 
-    fadeInAndLoop(time) {
+    fadeInAndLoop(time, maxVolume = 1) {
         if (!this.loaded) return;
         this.audio.loop = true;
         this.audio.volume = 0;
         this.audio.play();
-        const volumeStep = 1 / time;
+        const volumeStep = maxVolume / time;
         const interval = setInterval(() => {
             this.audio.volume = Math.min(1, this.audio.volume + volumeStep);
-            if (this.audio.volume >= 1) {
+            if (this.audio.volume >= maxVolume) {
                 clearInterval(interval);
             }
         }, time * 10);
