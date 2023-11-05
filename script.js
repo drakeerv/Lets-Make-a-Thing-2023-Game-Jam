@@ -18,9 +18,13 @@ const canvasHandler = new CanvasHandler(canvas);
 // Constants
 
 const MAZE_GRID_SIZE = 100;
-const MAZE_LINE_WIDTH = 10;
-const MAZE_COLS = 10;
-const MAZE_ROWS = 20;
+const MAZE_LINE_WIDTH = 5;
+
+// Variables
+
+let mazeCols = 5;
+let mazeRows = 5;
+let passedLevels = 0;
 
 // Assets
 
@@ -78,14 +82,14 @@ sceneManager.addScene("game", class extends Scene {
         }
 
         this.enemy = {
-            x: 0,
-            y: 0,
+            x: MAZE_GRID_SIZE * (mazeCols - 1) + MAZE_GRID_SIZE / 2,
+            y: MAZE_GRID_SIZE * (mazeRows - 1) + MAZE_GRID_SIZE / 2,
             velx: 0,
             vely: 0
         }
 
         this.particles = [];
-        this.maze = generateMaze(MAZE_COLS, MAZE_ROWS);
+        this.maze = generateMaze(mazeCols, mazeRows);
         this.lightOn = false;
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
@@ -96,6 +100,8 @@ sceneManager.addScene("game", class extends Scene {
             console.log("toggle keys");
             showKeys = !showKeys;
         }, "keys");
+
+        this.lightOnTime = 0;
 
         assetsLoader.assets.track1.fadeInAndLoop(10, 0.4);
     }
@@ -291,28 +297,36 @@ sceneManager.addScene("game", class extends Scene {
         });
     }
 
+    triggerSwitch() {
+        for (let i = 0; i < 10; i++) {
+            this.particles.push({
+                gravity: 9.8,
+                x: 75,
+                y: canvas.height / 2,
+                velx: Math.random() * 100 - 50,
+                vely: Math.random() * 100 - 50,
+                color: "rgba(211, 211, 211, 0.25)",
+                size: Math.random() * 5 + 5,
+                relative: false,
+                lifetime: 2
+            })
+        }
+        assetsLoader.assets.switch_sound.playFromStart();
+    }
+
     update(dt) {
         this.updateParticles(dt);
 
         // Light switch
         if (inputSystem.isActionHeld("light") != this.lightOn) {
-            this.lightOn = !this.lightOn;
-
-            for (let i = 0; i < 10; i++) {
-                this.particles.push({
-                    gravity: 9.8,
-                    x: 75,
-                    y: canvas.height / 2,
-                    velx: Math.random() * 100 - 50,
-                    vely: Math.random() * 100 - 50,
-                    color: "rgba(211, 211, 211, 0.25)",
-                    size: Math.random() * 5 + 5,
-                    relative: false,
-                    lifetime: 2
-                })
-            }
-
-            assetsLoader.assets.switch_sound.playFromStart();
+            if (!inputSystem.isActionHeld("light") && this.lightOn && Date.now() - this.lightOnTime > 1000) {
+                this.lightOn = false;
+                this.triggerSwitch();
+            } else if (inputSystem.isActionHeld("light") && !this.lightOn) {
+                this.lightOn = true;
+                this.lightOnTime = Date.now();
+                this.triggerSwitch();
+            }  
         }
 
         // Player
@@ -377,10 +391,34 @@ sceneManager.addScene("game", class extends Scene {
                 } else if (enterFutureTop && hasTopFace) {
                     this.player.vely = 0;
                 }
+
+                if (cellX == this.maze[cellY].length - 1 && cellY == this.maze.length - 1) {
+                    mazeCols += Math.pow(mazeCols, 0.25);
+                    mazeRows += Math.pow(mazeRows, 0.25);
+                    passedLevels++;
+                    sceneManager.setCurrentScene("nextLevel");
+                }
             }
+
+            this.enemy.velx = 0;
+            this.enemy.vely = 0;
         } else {
             this.player.velx = 0;
             this.player.vely = 0;
+
+            // move enemy towards player
+            const dx = this.player.x - this.enemy.x;
+            const dy = this.player.y - this.enemy.y;
+            const angle = Math.atan2(dy, dx);
+            const speed = 100;
+            this.enemy.velx = Math.cos(angle) * speed;
+            this.enemy.vely = Math.sin(angle) * speed;
+
+            // check if enemy is touching player
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 20) {
+                sceneManager.setCurrentScene("menu");
+            }
         }
 
         this.player.x += this.player.velx * dt;
@@ -399,6 +437,103 @@ sceneManager.addScene("game", class extends Scene {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
         inputSystem.removeKeyPressListener(this.showKeysKeyListener, "keys");
         assetsLoader.assets.track1.fadeOutAndStop(10);
+    }
+});
+
+sceneManager.addScene("gameOver", class extends Scene {
+    constructor(name) {
+        super(name);
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("You Died", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw how many levels passed
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText("You Passed " + passedLevels + " Levels", ctx.canvas.width / 2, ctx.canvas.height / 2 + 30);
+
+        // Draw the menu button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
+        
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Menu", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+
+    }
+
+    update(dt) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+            canvasHandler.changeCursor("pointer");
+
+            if (inputSystem.mouse.left) {
+                canvasHandler.changeCursor("default");
+                sceneManager.setCurrentScene("menu");
+            }
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+    }
+});
+
+sceneManager.addScene("nextLevel", class extends Scene {
+    constructor(name) {
+        super(name);
+
+        this.timeUntilNextLevel = 3;
+        this.currentTimeUntilNextLevel = this.timeUntilNextLevel;
+
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("game");
+        }, "quit");
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("You Passed. For now...", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw progress bar below text
+        ctx.fillStyle = "transparent";
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200, 20);
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 + 50, 200 * (this.currentTimeUntilNextLevel / this.timeUntilNextLevel), 20);
+        ctx.restore();
+
+
+        ctx.restore();
+    }
+
+    update(dt) {
+        this.currentTimeUntilNextLevel -= dt;
+
+        if (this.currentTimeUntilNextLevel <= 0) {
+            sceneManager.setCurrentScene("game");
+        }
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
     }
 });
 
@@ -456,6 +591,10 @@ sceneManager.addScene("options", class extends Scene {
 sceneManager.addScene("menu", class extends Scene {
     constructor(name) {
         super(name);
+
+        mazeCols = 5;
+        mazeRows = 5;
+        passedLevels = 0;
     }
 
     animate(ctx) {
@@ -628,13 +767,16 @@ filterGl.shaderSource(filterFragShader, `
     const float VIGNETTE_STRENGTH = 0.3;
     const float VIGNETTE_SIZE = 2.0;
 
+    float randomNum = 0.0;
+
     float rand(vec2 co){
         return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
     }
     
     void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        float r = rand(v_texCoord + u_time);
+        float r = rand(v_texCoord + u_time + randomNum);
+        randomNum = mod(randomNum + r + 0.1, 1.0);
 
         // setup
         float x = v_texCoord.x * u_resolution.x;
