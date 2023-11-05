@@ -20,13 +20,6 @@ const canvasHandler = new CanvasHandler(canvas);
 const MAZE_GRID_SIZE = 100;
 const MAZE_LINE_WIDTH = 5;
 
-// Variables
-
-let mazeCols = 5;
-let mazeRows = 5;
-let passedLevels = 0;
-let hasSeenTutorial = false;
-
 // Assets
 
 const assetsSources = {
@@ -60,7 +53,19 @@ const inputSystem = new InputSystem({
 
 // Global Variables
 
-let showKeys = true;
+let mazeCols = 5;
+let mazeRows = 5;
+let passedLevels = 0;
+let showKeys = localStorage.getItem("showKeys") == null ? true : localStorage.getItem("showKeys") == "true";
+let hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
+let highScore = parseInt(localStorage.getItem("highScore")) || 0;
+
+// Functions
+
+function setHighScore(score) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+}
 
 // Scenes
 
@@ -71,6 +76,7 @@ sceneManager.addScene("tutorial", class extends Scene {
         super(name);
 
         hasSeenTutorial = true;
+        localStorage.setItem("hasSeenTutorial", "true");
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
             sceneManager.setCurrentScene("menu");
@@ -125,7 +131,7 @@ sceneManager.addScene("tutorial", class extends Scene {
         // draw back text
         ctx.fillStyle = "black";
         ctx.font = "15px Retro";
-        ctx.fillText("Back", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+        ctx.fillText("Play", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
 
         ctx.restore();
     }
@@ -136,7 +142,7 @@ sceneManager.addScene("tutorial", class extends Scene {
 
             if (inputSystem.mouse.left) {
                 canvasHandler.changeCursor("default");
-                sceneManager.setCurrentScene("menu");
+                sceneManager.setCurrentScene("game");
             }
         } else {
             canvasHandler.changeCursor("default");
@@ -205,6 +211,7 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
 
                 if (inputSystem.mouse.left) {
                     hasSeenTutorial = true;
+                    localStorage.setItem("hasSeenTutorial", "true");
                     canvasHandler.changeCursor("default");
                     sceneManager.setCurrentScene("game");
                 }
@@ -253,8 +260,8 @@ sceneManager.addScene("game", class extends Scene {
         }, "quit");
 
         this.showKeysKeyListener = inputSystem.addKeyPressListener(() => {
-            console.log("toggle keys");
             showKeys = !showKeys;
+            localStorage.setItem("showKeys", showKeys);
         }, "keys");
 
         this.lightOnTime = 0;
@@ -573,7 +580,7 @@ sceneManager.addScene("game", class extends Scene {
             // check if enemy is touching player
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 20) {
-                sceneManager.setCurrentScene("menu");
+                sceneManager.setCurrentScene("gameOver");
             }
         }
 
@@ -599,6 +606,40 @@ sceneManager.addScene("game", class extends Scene {
 sceneManager.addScene("gameOver", class extends Scene {
     constructor(name) {
         super(name);
+
+        this.gotHighScore = passedLevels > highScore;
+        setHighScore(Math.max(highScore, passedLevels));
+
+        this.particles = [];
+
+        if (this.gotHighScore) {
+            for (let i = 0; i < 100; i++) {
+                // draw confetti from top of screen with random colors. y is above the screen, x is a random point
+                this.particles.push({
+                    gravity: 9.8,
+                    x: Math.random() * ctx.canvas.width,
+                    y: -10,
+                    velx: Math.random() * 100 - 50,
+                    vely: Math.random() * 100 - 50,
+                    color: "hsl(" + Math.random() * 360 + ", 100%, 50%)",
+                    size: Math.random() * 5 + 5,
+                    lifetime: 100
+                })
+            }
+        }
+    }
+
+    drawParticles(ctx) {
+        ctx.save();
+
+        this.particles.forEach((particle) => {
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.restore();
     }
 
     animate(ctx) {
@@ -616,6 +657,11 @@ sceneManager.addScene("gameOver", class extends Scene {
         ctx.font = "15px Retro";
         ctx.fillText("You Passed " + passedLevels + " Levels", ctx.canvas.width / 2, ctx.canvas.height / 2 + 30);
 
+        // draw high score
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText((this.gotHighScore ? "New " : "") + "High Score: " + highScore, ctx.canvas.width / 2, ctx.canvas.height / 2 + 60);
+
         // Draw the menu button
         ctx.fillStyle = "white";
         ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
@@ -624,6 +670,9 @@ sceneManager.addScene("gameOver", class extends Scene {
         ctx.font = "15px Retro";
         ctx.fillText("Menu", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
 
+        ctx.restore();
+
+        this.drawParticles(ctx);
     }
 
     update(dt) {
@@ -637,6 +686,19 @@ sceneManager.addScene("gameOver", class extends Scene {
         } else {
             canvasHandler.changeCursor("default");
         }
+
+        this.particles.forEach((particle) => {
+            if (particle.lifetime > 0) {
+                particle.lifetime -= dt;
+            } else {
+                this.particles.splice(this.particles.indexOf(particle), 1);
+                return;
+            }
+
+            particle.vely -= particle.gravity * dt;
+            particle.x += particle.velx * dt;
+            particle.y += particle.vely * dt;
+        });
     }
 
     destroy() {
@@ -1038,5 +1100,5 @@ filterCanvasHandler.addAnimateListener(() => {
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
 
-sceneManager.setCurrentScene("loading");
+sceneManager.setCurrentScene("gameOver");
 sceneManager.setOverlayScene("debug");
