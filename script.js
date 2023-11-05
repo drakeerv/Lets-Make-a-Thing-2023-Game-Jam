@@ -25,6 +25,7 @@ const MAZE_LINE_WIDTH = 5;
 let mazeCols = 5;
 let mazeRows = 5;
 let passedLevels = 0;
+let hasSeenTutorial = false;
 
 // Assets
 
@@ -64,6 +65,161 @@ let showKeys = true;
 // Scenes
 
 const sceneManager = new SceneManager(ctx);
+
+sceneManager.addScene("tutorial", class extends Scene {
+    constructor(name) {
+        super(name);
+
+        hasSeenTutorial = true;
+
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("Tutorial", ctx.canvas.width / 2, ctx.canvas.height / 4);
+
+        // draw tutorial keys (w, a, s, d)
+        ctx.drawImage(assetsLoader.assets.key_w.img, ctx.canvas.width / 2 - 25, ctx.canvas.height / 4 + 25, 50, 50);
+        ctx.drawImage(assetsLoader.assets.key_a.img, ctx.canvas.width / 2 - 75, ctx.canvas.height / 4 + 75, 50, 50);
+        ctx.drawImage(assetsLoader.assets.key_s.img, ctx.canvas.width / 2 - 25, ctx.canvas.height / 4 + 75, 50, 50);
+        ctx.drawImage(assetsLoader.assets.key_d.img, ctx.canvas.width / 2 + 25, ctx.canvas.height / 4 + 75, 50, 50);
+        
+        // draw tutorial text
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText("Move with these keys", ctx.canvas.width / 2, ctx.canvas.height / 4 + 150);
+
+        // draw tutorial key (space)
+        ctx.drawImage(assetsLoader.assets.key_space.img, ctx.canvas.width / 2 - 25, ctx.canvas.height / 4 + 175, 50, 50);
+
+        // draw tutorial text
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText("Toggle Light with this key", ctx.canvas.width / 2, ctx.canvas.height / 4 + 250);
+
+        // draw horizontal line to break
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 4 + 275, 200, 5);
+
+        // draw the goal of the game
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText("The goal of the game is to get to the end of the maze (Bottom Right).", ctx.canvas.width / 2, ctx.canvas.height / 4 + 300);
+        ctx.fillText("without being caught by the enemy (Red Square).", ctx.canvas.width / 2, ctx.canvas.height / 4 + 325);
+        ctx.fillText("You can only move with the lights off and the enemy can only move with the lights on.", ctx.canvas.width / 2, ctx.canvas.height / 4 + 350);
+        ctx.fillText("If the enemy catches you, you die and have to restart.", ctx.canvas.width / 2, ctx.canvas.height / 4 + 375);
+
+        // draw back button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
+
+        // draw back text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Back", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+
+        ctx.restore();
+    }
+
+    update(dt) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+            canvasHandler.changeCursor("pointer");
+
+            if (inputSystem.mouse.left) {
+                canvasHandler.changeCursor("default");
+                sceneManager.setCurrentScene("menu");
+            }
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+    }
+});
+
+sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
+    constructor(name) {
+        super(name);
+
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw text
+        ctx.fillStyle = "white";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("You have not seen the tutorial", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw back buttton and title
+        // draw see tutorial buttton and title
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 100, 200, 20);
+
+        // draw back text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("See Tutorial", ctx.canvas.width / 2, ctx.canvas.height / 2 + 115);
+
+        // draw continue button
+        ctx.fillStyle = "white";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
+
+        // draw back text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Continue", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+
+        ctx.restore();
+    }
+
+    update(dt) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
+            if (inputSystem.mouse.y > ctx.canvas.height / 2 + 100 && inputSystem.mouse.y < ctx.canvas.height / 2 + 120) {
+                // See Tutorial
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    canvasHandler.changeCursor("default");
+                    sceneManager.setCurrentScene("tutorial");
+                }
+            } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 190) {
+                // Continue
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    hasSeenTutorial = true;
+                    canvasHandler.changeCursor("default");
+                    sceneManager.setCurrentScene("game");
+                }
+            } else {
+                canvasHandler.changeCursor("default");
+            }
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+    }
+});
 
 sceneManager.addScene("game", class extends Scene {
     constructor(name) {
@@ -638,7 +794,11 @@ sceneManager.addScene("menu", class extends Scene {
 
                 if (inputSystem.mouse.left) {
                     canvasHandler.changeCursor("default");
-                    sceneManager.setCurrentScene("game");
+                    if (hasSeenTutorial) {
+                        sceneManager.setCurrentScene("game");
+                    } else {
+                        sceneManager.setCurrentScene("hasNotSeenTutorial");
+                    }
                 }
             } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 100 && inputSystem.mouse.y < ctx.canvas.height / 2 + 120) {
                 // Options
