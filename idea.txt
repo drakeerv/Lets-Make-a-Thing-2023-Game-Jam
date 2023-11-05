@@ -1,6 +1,0 @@
-light game
-maze, go to middle
-enemy moves when light is on, you move when light is off
-you cant see when light is off
-
-https://codepen.io/Mobius1/embed/ZNgwbr/?theme-id=modal
