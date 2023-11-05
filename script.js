@@ -19,7 +19,7 @@ const canvasHandler = new CanvasHandler(canvas);
 
 const MAZE_GRID_SIZE = 50;
 const MAZE_COLS = 10;
-const MAZE_ROWS = 10;
+const MAZE_ROWS = 20;
 
 // Assets
 
@@ -84,7 +84,7 @@ sceneManager.addScene("game", class extends Scene {
         }
 
         this.particles = [];
-        this.maze = [];
+        this.maze = generateMaze(MAZE_COLS, MAZE_ROWS);
         this.lightOn = false;
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
@@ -133,9 +133,9 @@ sceneManager.addScene("game", class extends Scene {
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, MAZE_ROWS * MAZE_GRID_SIZE);
-        ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, MAZE_ROWS * MAZE_GRID_SIZE);
-        ctx.lineTo(MAZE_COLS * MAZE_GRID_SIZE, 0);
+        ctx.lineTo(0, this.maze.length * MAZE_GRID_SIZE);
+        ctx.lineTo(this.maze[0].length * MAZE_GRID_SIZE, this.maze.length * MAZE_GRID_SIZE);
+        ctx.lineTo(this.maze[0].length * MAZE_GRID_SIZE, 0);
         ctx.lineTo(0, 0);
         ctx.stroke();
 
@@ -339,6 +339,44 @@ sceneManager.addScene("game", class extends Scene {
             }
             if (inputSystem.isActionHeld("left") && inputSystem.isActionHeld("right")) {
                 this.player.velx = 0;
+            }
+
+            if (this.player.velx > 0 || this.player.vely > 0) {
+                const cellX = (this.player.x / MAZE_GRID_SIZE) | 0;
+                const cellY = (this.player.y / MAZE_GRID_SIZE) | 0;
+                const mazeCell = this.maze[cellY][cellX];
+
+                const futureX = this.player.x + (this.player.velx * dt);
+                const futureY = this.player.y + (this.player.vely * dt);
+                
+                const futureCellX = (futureX / MAZE_GRID_SIZE) | 0;
+                const futureCellY = (futureY / MAZE_GRID_SIZE) | 0;
+                const futureMazeCell = this.maze[futureCellY][futureCellX];
+
+                if (mazeCell) {
+                    const xPositionInCell = (this.player.x % MAZE_GRID_SIZE) + (this.player.velx * dt);
+                    const yPositionInCell = (this.player.y % MAZE_GRID_SIZE) + (this.player.vely * dt);
+
+                    const hasTopFace = (cellY == 0) || (this.maze[cellY - 1] && this.maze[cellY - 1][cellX].bottom);
+                    const hasLeftFace = (cellX == 0) || (this.maze[cellY][cellX - 1] && this.maze[cellY][cellX - 1].right);
+                    const hasBottomFace = mazeCell.bottom;
+                    const hasRightFace = mazeCell.right;
+
+                    if (xPositionInCell < 5) {
+                        console.log(xPositionInCell);
+                        this.player.velx = 0;
+                        this.player.x = 5;
+                    } else if (xPositionInCell > MAZE_GRID_SIZE - 5) {
+                        this.player.velx = 0;
+                        this.player.x = MAZE_GRID_SIZE - 5;
+                    }
+
+                    if (yPositionInCell < 5) {
+
+                    } else if (yPositionInCell > MAZE_GRID_SIZE - 5) {
+
+                    }
+                }
             }
         } else {
             this.player.velx = 0;
@@ -567,7 +605,7 @@ function colorToHex(r, g, b, a) {
 }
 
 function generateRandomSnow() {
-    return ((50 * Math.random()) | 0) << 24;
+    return ((75 * Math.random()) | 0) << 24;
 }
 
 filterCanvasHandler.addResizeListener(() => {
@@ -581,20 +619,20 @@ filterCanvasHandler.addResizeListener(() => {
     cachedImageBuffer = buffer;
 });
 
-filterCanvasHandler.addAnimateListener(() => {
-    if (frame % 10 == 0) {
-        const buffer = cachedImageBuffer.slice();
+// filterCanvasHandler.addAnimateListener(() => {
+//     if (frame % 10 == 0) {
+//         const buffer = cachedImageBuffer.slice();
 
-        for (let i = 0; i < buffer.length; i++) {
-            buffer[i] += generateRandomSnow();
-        }
+//         for (let i = 0; i < buffer.length; i++) {
+//             buffer[i] += generateRandomSnow();
+//         }
 
-        const imageData = new ImageData(new Uint8ClampedArray(buffer.buffer), filterCanvas.width, filterCanvas.height);
-        filterCtx.putImageData(imageData, 0, 0);
-    }
+//         const imageData = new ImageData(new Uint8ClampedArray(buffer.buffer), filterCanvas.width, filterCanvas.height);
+//         filterCtx.putImageData(imageData, 0, 0);
+//     }
 
-    frame++;
-});
+//     frame++;
+// });
 
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
