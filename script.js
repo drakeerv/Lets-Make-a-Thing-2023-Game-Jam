@@ -277,7 +277,7 @@ sceneManager.addScene("game", class extends Scene {
         }
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
-            sceneManager.setCurrentScene("menu");
+            sceneManager.setCurrentScene("gameOver");
         }, "quit");
 
         this.showKeysKeyListener = inputSystem.addKeyPressListener(() => {
@@ -753,7 +753,7 @@ sceneManager.addScene("nextLevel", class extends Scene {
         this.currentTimeUntilNextLevel = this.timeUntilNextLevel;
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
-            sceneManager.setCurrentScene("game");
+            sceneManager.setCurrentScene("gameOver");
         }, "quit");
     }
 
