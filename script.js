@@ -132,12 +132,12 @@ sceneManager.addScene("tutorial", class extends Scene {
 
         // draw back button
         ctx.fillStyle = "white";
-        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 4 + 400, 200, 20);
 
         // draw back text
         ctx.fillStyle = "black";
         ctx.font = "15px Retro";
-        ctx.fillText(this.redirectedFromMenu ? "Back" : "Play", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
+        ctx.fillText(this.redirectedFromMenu ? "Back" : "Play", ctx.canvas.width / 2, ctx.canvas.height / 4 + 415);
 
         ctx.restore();
     }
@@ -268,6 +268,12 @@ sceneManager.addScene("game", class extends Scene {
         this.particles = [];
         this.maze = generateMaze(mazeCols, mazeRows);
         this.lightOn = false;
+        this.touchingSides = {
+            left: false,
+            right: false,
+            top: false,
+            bottom: false
+        }
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
             sceneManager.setCurrentScene("menu");
@@ -559,14 +565,28 @@ sceneManager.addScene("game", class extends Scene {
 
                 if (enterFutureRight && hasRightFace) {
                     this.player.velx = 0;
+                    this.touchingSides.right = true;
+                    this.touchingSides.left = false;
                 } else if (enterFutureLeft && hasLeftFace) {
                     this.player.velx = 0;
+                    this.touchingSides.left = true;
+                    this.touchingSides.right = false;
+                } else {
+                    this.touchingSides.right = false;
+                    this.touchingSides.left = false;
                 }
                 
                 if (enterFutureBottom && hasBottomFace) {
                     this.player.vely = 0;
+                    this.touchingSides.bottom = true;
+                    this.touchingSides.top = false;
                 } else if (enterFutureTop && hasTopFace) {
                     this.player.vely = 0;
+                    this.touchingSides.top = true;
+                    this.touchingSides.bottom = false;
+                } else {
+                    this.touchingSides.bottom = false;
+                    this.touchingSides.top = false;
                 }
 
                 if (cellX == this.maze[cellY].length - 1 && cellY == this.maze.length - 1) {
