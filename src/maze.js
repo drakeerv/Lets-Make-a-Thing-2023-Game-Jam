@@ -87,7 +87,6 @@ function generateMaze(width, height) {
             break;
         }
     }
-    console.log(maze);
 
     return maze;
 }

@@ -544,7 +544,7 @@ sceneManager.addScene("game", class extends Scene {
             }
 
             const cellX = Math.floor(this.player.x / MAZE_GRID_SIZE);
-            const cellY = Math.floor(this.player.y / MAZE_GRID_SIZE) | 0;
+            const cellY = Math.floor(this.player.y / MAZE_GRID_SIZE);
             const mazeCell = this.maze[cellY] != undefined && this.maze[cellY][cellX];
 
             const futureX = this.player.x + (this.player.velx * dt);
