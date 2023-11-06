@@ -143,7 +143,7 @@ sceneManager.addScene("tutorial", class extends Scene {
     }
 
     update(dt) {
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 4 + 400 && inputSystem.mouse.y < ctx.canvas.height / 4 + 420) {
             canvasHandler.changeCursor("pointer");
 
             if (inputSystem.mouse.left) {
@@ -590,8 +590,8 @@ sceneManager.addScene("game", class extends Scene {
                 }
 
                 if (cellX == this.maze[cellY].length - 1 && cellY == this.maze.length - 1) {
-                    mazeCols += Math.pow(mazeCols, 0.25);
-                    mazeRows += Math.pow(mazeRows, 0.25);
+                    mazeCols += Math.round(Math.pow(mazeCols, 0.25));
+                    mazeRows += Math.round(Math.pow(mazeRows, 0.25));
                     passedLevels++;
                     sceneManager.setCurrentScene("nextLevel");
                 }
