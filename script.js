@@ -5,6 +5,7 @@ import InputSystem from "./src/controller.js";
 import CanvasHandler from "./src/canvas.js";
 import generateMaze from "./src/maze.js";
 import { Scene, SceneManager } from "./src/scene.js";
+import { lerp } from "./src/math.js";
 
 // Canvas
 
@@ -246,16 +247,16 @@ sceneManager.addScene("game", class extends Scene {
     constructor(name) {
         super(name);
 
-        this.camera = {
-            x: 0,
-            y: 0
-        }
-
         this.player = {
             x: MAZE_GRID_SIZE / 2,
             y: MAZE_GRID_SIZE / 2,
             velx: 0,
             vely: 0
+        }
+
+        this.camera = {
+            x: this.player.x,
+            y: this.player.y
         }
 
         this.enemy = {
@@ -626,8 +627,11 @@ sceneManager.addScene("game", class extends Scene {
         this.enemy.y += this.enemy.vely * dt;
 
         // Camera
-        this.camera.x = this.player.x;
-        this.camera.y = this.player.y;
+        // this.camera.x = lerp(this.camera.x, this.player.x, 0.5);
+        // this.camera.y = lerp(this.camera.y, this.player.y, 0.5);
+        // make a walking motion for the camera using sin and lerp along the axis of movement
+        this.camera.x = lerp(this.camera.x, this.player.x, 0.5 + Math.sin(Date.now() / 100) * 0.1);
+        this.camera.y = lerp(this.camera.y, this.player.y, 0.5 + Math.sin(Date.now() / 100) * 0.1);
     }
 
     destroy() {
@@ -1050,20 +1054,21 @@ filterGl.shaderSource(filterFragShader, `
 
     const float SCANLINE_STRENGTH = 0.1;
     const float SCANLINE_WIDTH = 3.0;
-    const float SNOW_STRENGTH = 0.2;
+    const float SNOW_STRENGTH = 0.3;
     const float VIGNETTE_STRENGTH = 0.3;
     const float VIGNETTE_SIZE = 2.0;
 
-    float randomNum = 0.0;
+    float randomizer = 0.0;
 
     float rand(vec2 co){
-        return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+        float r = fract(sin(dot(co + randomizer, vec2(12.9898, 78.233))) * 43758.5453);
+        randomizer = mod(randomizer + r + 0.1, 1.0);
+        return r;
     }
     
     void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        float r = rand(v_texCoord + u_time + randomNum);
-        randomNum = mod(randomNum + r + 0.1, 1.0);
+        float r = rand(v_texCoord + u_time);
 
         // setup
         float x = v_texCoord.x * u_resolution.x;
