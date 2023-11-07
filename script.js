@@ -473,7 +473,7 @@ sceneManager.addScene("game", class extends Scene {
         }
 
         // draw 4 mobile buttons using arrows as text at the bottom left in 
-        if (IS_MOBILE) {
+        if (true) {
             if (this.lightOn) {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
             } else {
