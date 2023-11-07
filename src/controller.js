@@ -45,10 +45,13 @@ class InputSystem {
     _onMouseDown(event) {
         if (event.button === 0) {
             this.mouse.left = true;
+            if (!event.repeat) this.mouseClickListeners.left.forEach(data => data.callback());
         } else if (event.button === 1) {
             this.mouse.middle = true;
+            if (!event.repeat) this.mouseClickListeners.middle.forEach(data => data.callback());
         } else if (event.button === 2) {
             this.mouse.right = true;
+            if (!event.repeat) this.mouseClickListeners.right.forEach(data => data.callback());
         }
     }
 
@@ -59,17 +62,6 @@ class InputSystem {
             this.mouse.middle = false;
         } else if (event.button === 2) {
             this.mouse.right = false;
-        }
-    }
-
-    _onMouseClick(event) {
-        const button = event.button;
-        if (button === 0) {
-            this.mouseClickListeners.left.forEach(data => data.callback());
-        } else if (button === 1) {
-            this.mouseClickListeners.middle.forEach(data => data.callback());
-        } else if (button === 2) {
-            this.mouseClickListeners.right.forEach(data => data.callback());
         }
     }
 
@@ -187,7 +179,6 @@ class InputSystem {
         this.canvas.addEventListener("keydown", this._onKeyDown.bind(this));
         window.addEventListener("keyup", this._onKeyUp.bind(this));
 
-        this.canvas.addEventListener("click", this._onMouseClick.bind(this));
         this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
         this.canvas.addEventListener("mousedown", this._onMouseDown.bind(this));
         window.addEventListener("mouseup", this._onMouseUp.bind(this));

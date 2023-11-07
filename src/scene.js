@@ -49,21 +49,21 @@ class SceneManager {
     }
 
     setOverlayScene(name) {
-        if (this.overlayScene) this.overlayScene.destroy();
+        if (this.currentOverlay) this.currentOverlay.destroy();
         const scene = this.getOverlay(name);
         if (scene) {
-            this.overlayScene = new scene(name);
+            this.currentOverlay = new scene(name);
         }
     }
 
     animate() {
         if (this.currentScene) this.currentScene.animate(this.ctx);
-        if (this.overlayScene && this.showOverlay) this.overlayScene.animate(this.ctx);
+        if (this.currentOverlay && this.showOverlay) this.currentOverlay.animate(this.ctx);
     }
 
     update(dt) {
         if (this.currentScene) this.currentScene.update(dt);
-        if (this.overlayScene && this.showOverlay) this.overlayScene.update(dt);
+        if (this.currentOverlay && this.showOverlay) this.currentOverlay.update(dt);
     }
 }
 

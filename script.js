@@ -61,7 +61,6 @@ let mazeCols = 5;
 let mazeRows = 5;
 let passedLevels = 0;
 let redirectedFromMenu = false;
-let showKeys = IS_MOBILE ? false : true;
 let hasSeenTutorial = false;
 let highScore = 0;
 
@@ -73,7 +72,6 @@ function setHighScore(score) {
 }
 
 function readLocalStorage() {
-    showKeys = localStorage.getItem("showKeys") == null ? showKeys : localStorage.getItem("showKeys") == "true";
     hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
     highScore = parseInt(localStorage.getItem("highScore")) || 0;
 }
@@ -275,11 +273,31 @@ sceneManager.addScene("game", class extends Scene {
             y: this.player.y
         }
 
-        this.enemy = {
+        this.enemies = [];
+
+        this.enemies.push({
             x: MAZE_GRID_SIZE * (mazeCols - 1) + MAZE_GRID_SIZE / 2,
             y: MAZE_GRID_SIZE * (mazeRows - 1) + MAZE_GRID_SIZE / 2,
             velx: 0,
             vely: 0
+        });
+
+        if (passedLevels >= 5) {
+            this.enemies.push({
+                x: MAZE_GRID_SIZE * (mazeCols - 1) + MAZE_GRID_SIZE / 2,
+                y: 0,
+                velx: 0,
+                vely: 0
+            });
+        }
+
+        if (passedLevels >= 10) {
+            this.enemies.push({
+                x: 0,
+                y: MAZE_GRID_SIZE * (mazeRows - 1) + MAZE_GRID_SIZE / 2,
+                velx: 0,
+                vely: 0
+            });
         }
 
         this.particles = [];
@@ -295,11 +313,6 @@ sceneManager.addScene("game", class extends Scene {
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
             sceneManager.setCurrentScene("gameOver");
         }, "quit");
-
-        this.showKeysKeyListener = inputSystem.addKeyPressListener(() => {
-            showKeys = !showKeys;
-            localStorage.setItem("showKeys", showKeys);
-        }, "keys");
 
         this.lightOnTime = 0;
 
@@ -380,7 +393,9 @@ sceneManager.addScene("game", class extends Scene {
         if (this.lightOn) {
             this.drawMaze(ctx);
             ctx.fillStyle = "red";
-            ctx.fillRect(this.enemy.x - 10, this.enemy.y - 10, 20, 20);
+            this.enemies.forEach((enemy) => {
+                ctx.fillRect(enemy.x - 10, enemy.y - 10, 20, 20);
+            });
         }
 
         // draw the player
@@ -437,39 +452,6 @@ sceneManager.addScene("game", class extends Scene {
             ctx.beginPath();
             ctx.arc(75, (ctx.canvas.height / 2) - 110, 25, 0, Math.PI * 2);
             ctx.fill();
-        }
-
-        // Draw the keys in the bottomleft corner of the screen and use a faint black background
-        if (showKeys) {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-            ctx.fillRect(ctx.canvas.width - 150, 0, 150, 400);
-
-            ctx.fillStyle = "white";
-            ctx.font = "13px Retro";
-
-            ctx.drawImage(assetsLoader.assets.key_w.img, ctx.canvas.width - 150, 0, 50, 50);
-            ctx.fillText("Move Forward", ctx.canvas.width - 90, 30);
-
-            ctx.drawImage(assetsLoader.assets.key_a.img, ctx.canvas.width - 150, 50, 50, 50);
-            ctx.fillText("Move Left", ctx.canvas.width - 90, 80);
-
-            ctx.drawImage(assetsLoader.assets.key_s.img, ctx.canvas.width - 150, 100, 50, 50);
-            ctx.fillText("Move Backward", ctx.canvas.width - 90, 130);
-
-            ctx.drawImage(assetsLoader.assets.key_d.img, ctx.canvas.width - 150, 150, 50, 50);
-            ctx.fillText("Move Right", ctx.canvas.width - 90, 180);
-
-            ctx.drawImage(assetsLoader.assets.key_space.img, ctx.canvas.width - 150, 200, 50, 50);
-            ctx.fillText("Toggle Light", ctx.canvas.width - 90, 230);
-
-            ctx.drawImage(assetsLoader.assets.key_q.img, ctx.canvas.width - 150, 250, 50, 50);
-            ctx.fillText("Toggle Debug", ctx.canvas.width - 90, 280);
-
-            ctx.drawImage(assetsLoader.assets.key_k.img, ctx.canvas.width - 150, 300, 50, 50);
-            ctx.fillText("Toggle Keys", ctx.canvas.width - 90, 330);
-
-            ctx.drawImage(assetsLoader.assets.key_escape.img, ctx.canvas.width - 150, 350, 50, 50);
-            ctx.fillText("Quit", ctx.canvas.width - 90, 380);
         }
 
         // draw 4 mobile buttons using arrows as text at the bottom left in 
@@ -664,33 +646,37 @@ sceneManager.addScene("game", class extends Scene {
                 }
             }
 
-            this.enemy.velx = 0;
-            this.enemy.vely = 0;
+            this.enemies.forEach((enemy) => {
+                enemy.velx = 0;
+                enemy.vely = 0;
+            });
         } else {
             this.player.velx = 0;
             this.player.vely = 0;
 
-            // move enemy towards player
-            const dx = this.player.x - this.enemy.x;
-            const dy = this.player.y - this.enemy.y;
-            const angle = Math.atan2(dy, dx);
-            const speed = 100;
-            this.enemy.velx = Math.cos(angle) * speed;
-            this.enemy.vely = Math.sin(angle) * speed;
+            this.enemies.forEach((enemy) => {
+                const dx = this.player.x - enemy.x;
+                const dy = this.player.y - enemy.y;
+                const angle = Math.atan2(dy, dx);
+                const speed = 100;
+                enemy.velx = Math.cos(angle) * speed;
+                enemy.vely = Math.sin(angle) * speed;
 
-            // check if enemy is touching player
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 20) {
-                sceneManager.setCurrentScene("gameOver");
-            }
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 20) {
+                    sceneManager.setCurrentScene("gameOver");
+                }
+            });
         }
 
         this.player.x += this.player.velx * dt;
         this.player.y += this.player.vely * dt;
 
         // Enemy
-        this.enemy.x += this.enemy.velx * dt;
-        this.enemy.y += this.enemy.vely * dt;
+        this.enemies.forEach((enemy) => {
+            enemy.x += enemy.velx * dt;
+            enemy.y += enemy.vely * dt;
+        });
 
         // Camera
         this.camera.x = lerp(this.camera.x, this.player.x, 0.5 + Math.sin(Date.now() / 100) * 0.1);
@@ -702,7 +688,6 @@ sceneManager.addScene("game", class extends Scene {
 
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
-        inputSystem.removeKeyPressListener(this.showKeysKeyListener, "keys");
         canvasHandler.changeCursor("default");
         assetsLoader.assets.track1.fadeOutAndStop(10);
     }
@@ -871,6 +856,111 @@ sceneManager.addScene("nextLevel", class extends Scene {
     }
 });
 
+sceneManager.addScene("test", class extends Scene {
+    constructor(name) {
+        super(name);
+
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
+
+        this.particles = [];
+    }
+
+    drawParticles(ctx) {
+        ctx.save();
+
+        this.particles.forEach((particle) => {
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    animate(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+
+        // draw white background
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // draw r, g, b rects in the top left
+        ctx.fillStyle = "red";
+        ctx.fillRect(0, 0, ctx.canvas.width / 3, ctx.canvas.height / 3);
+
+        ctx.fillStyle = "green";
+        ctx.fillRect(ctx.canvas.width / 3, 0, ctx.canvas.width / 3, ctx.canvas.height / 3);
+
+        ctx.fillStyle = "blue";
+        ctx.fillRect(ctx.canvas.width / 3 * 2, 0, ctx.canvas.width / 3, ctx.canvas.height / 3);
+
+        // draw text
+        ctx.fillStyle = "black";
+        ctx.font = "30px Retro";
+        ctx.textAlign = "center";
+        ctx.fillText("Test Screen", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+        // draw back buttton and title
+        // draw see tutorial buttton and title
+        ctx.fillStyle = "black";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 100, 200, 20);
+
+        // draw back text
+        ctx.fillStyle = "white";
+        ctx.font = "15px Retro";
+        ctx.fillText("Back", ctx.canvas.width / 2, ctx.canvas.height / 2 + 115);
+
+        ctx.restore();
+
+        this.drawParticles(ctx);
+    }
+
+    onClick() {
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+            assetsLoader.assets.button_sound.playFromStart();
+            sceneManager.setCurrentScene("menu");
+        }
+    }
+
+    update(dt) {
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+            canvasHandler.changeCursor("pointer");
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+
+        // emit particles from cursor of random colors
+        if (inputSystem.mouse.left) {
+            this.particles.push({
+                gravity: -98,
+                x: inputSystem.mouse.x,
+                y: inputSystem.mouse.y,
+                velx: Math.random() * 100 - 50,
+                vely: 0,
+                color: "hsl(" + Math.random() * 360 + ", 100%, 50%)",
+                size: Math.random() * 5 + 5,
+                lifetime: 10
+            });
+        }
+
+        this.particles.forEach((particle) => {
+            if (particle.lifetime > 0) {
+                particle.lifetime -= dt;
+            } else {
+                this.particles.splice(this.particles.indexOf(particle), 1);
+                return;
+            }
+
+            particle.vely -= particle.gravity * dt;
+            particle.x += particle.velx * dt;
+            particle.y += particle.vely * dt;
+        });
+    }
+});
+
 sceneManager.addScene("credits", class extends Scene {
     constructor(name) {
         super(name);
@@ -985,6 +1075,10 @@ sceneManager.addScene("credits", class extends Scene {
                 // Reset Game
                 assetsLoader.assets.button_sound.playFromStart();
                 this.confirmResetScreen = true;
+            } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 - 20, width: 200, height: 40 })) {
+                // Test screen if click on credits title
+                assetsLoader.assets.button_sound.playFromStart();
+                sceneManager.setCurrentScene("test");
             }
         }
     }
@@ -1146,7 +1240,8 @@ sceneManager.addOverlay("debug", class extends Scene {
         this.debugStats = {
             fps: 0,
             updatesps: 0,
-            canvasSize: "0x0"
+            canvasSize: "0x0",
+            isMobile: IS_MOBILE
         }
 
         this.debugKeyListener = inputSystem.addKeyPressListener(() => {
@@ -1158,13 +1253,15 @@ sceneManager.addOverlay("debug", class extends Scene {
         ctx.save();
 
         ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, 150, 120);
+        ctx.fillRect(0, 0, 150, 160);
         ctx.fillStyle = "white";
         ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), 10, 20);
         ctx.fillText("FPS: " + Math.round(canvasHandler.fps), 10, 40);
         ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, 10, 60);
         ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, 10, 80);
         ctx.fillText("Current Scene: " + sceneManager.currentScene.name, 10, 100);
+        ctx.fillText("Current Overlay: " + sceneManager.currentOverlay.name, 10, 120);
+        ctx.fillText("Is Mobile: " + IS_MOBILE, 10, 140);
 
         ctx.restore();
     }
@@ -1210,20 +1307,21 @@ filterGl.shaderSource(filterFragShader, `
     const float SCANLINE_STRENGTH = 0.1;
     const float SCANLINE_WIDTH = 3.0;
     const float SNOW_STRENGTH = 0.3;
+    const float FLICKER_STRENGTH = 0.02;
+    const float MOVEMENT_STRENGTH = 0.05;
+    const float MOVEMENT_SPEED = 10.0;
     const float VIGNETTE_STRENGTH = 0.3;
-    const float VIGNETTE_SIZE = 2.0;
+    const float VIGNETTE_SIZE = 3.0;
 
     float randomizer = 0.0;
 
     float rand(vec2 co){
-        float r = fract(sin(dot(co + randomizer, vec2(12.9898, 78.233))) * 43758.5453);
-        randomizer = mod(sin(randomizer + r + 0.1), 1.0);
+        float r = fract(sin(dot(co + mod(u_time, 1.0), vec2(12.9898, 78.233))) * 43758.5453);
         return r;
     }
     
     void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        float r = rand(v_texCoord + u_time);
 
         // setup
         float x = v_texCoord.x * u_resolution.x;
@@ -1236,7 +1334,13 @@ filterGl.shaderSource(filterFragShader, `
         }
 
         // snow
-        color.a += r * SNOW_STRENGTH;
+        color.a += rand(v_texCoord) * SNOW_STRENGTH;
+
+        // flicker
+        color.a += rand(vec2(0)) * FLICKER_STRENGTH;
+
+        // movement
+        color.a += sin(x / MOVEMENT_SPEED + u_time) * MOVEMENT_STRENGTH;
 
         // vignette
         vec2 center = u_resolution / 2.0;
