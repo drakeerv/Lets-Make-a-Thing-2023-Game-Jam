@@ -37,8 +37,10 @@ const assetsSources = {
     "key_q": "assets/keys/q.png",
     "key_k": "assets/keys/k.png",
     "key_escape": "assets/keys/escape.png",
-    "track1": "assets/music/track1.ogg",
-    "button_sound": "assets/button.ogg"
+    "track1_track": "assets/music/track1.ogg",
+    "button_sound": "assets/button.ogg",
+    "test_track": "assets/music/test.ogg",
+    "test": "assets/test.gif"
 }
 const assetsLoader = new AssetLoader(assetsSources);
 assetsLoader.startLoadAssets();
@@ -183,7 +185,6 @@ sceneManager.addScene("tutorial", class extends Scene {
         canvasHandler.changeCursor("default");
     }
 });
-
 sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
     constructor(name) {
         super(name);
@@ -316,7 +317,7 @@ sceneManager.addScene("game", class extends Scene {
 
         this.lightOnTime = 0;
 
-        assetsLoader.assets.track1.fadeInAndLoop(10, 0.4);
+        assetsLoader.assets.track1_track.fadeInAndLoop(10, 0.4);
     }
 
     drawParticles(ctx) {
@@ -689,7 +690,7 @@ sceneManager.addScene("game", class extends Scene {
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
         canvasHandler.changeCursor("default");
-        assetsLoader.assets.track1.fadeOutAndStop(10);
+        assetsLoader.assets.track1_track.fadeOutAndStop(10);
     }
 });
 
@@ -865,6 +866,10 @@ sceneManager.addScene("test", class extends Scene {
         }, "quit");
         this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
 
+        assetsLoader.assets.test_track.fadeInAndLoop(10, 0.4);
+        this.animationTime = 0;
+        this.speed = 160 / 60;
+
         this.particles = [];
     }
 
@@ -877,6 +882,38 @@ sceneManager.addScene("test", class extends Scene {
             ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             ctx.fill();
         });
+    }
+
+    animatePlayer(ctx) {
+        ctx.save();
+
+        // draw dancing player and enemies to the beat of the song
+        ctx.fillStyle = "green";
+        
+        const height = 15 + Math.abs(Math.sin(this.animationTime * this.speed * Math.PI)) * 5;
+        ctx.fillRect(ctx.canvas.width / 2 - 10, ctx.canvas.height / 4 * 3 - height, 20, height);
+
+        ctx.restore();
+    }
+
+    animateEnemy(ctx) {
+        ctx.save();
+
+        ctx.fillStyle = "red";
+        
+        const height = Math.abs(Math.cos(this.animationTime * this.speed * Math.PI)) * 15;
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 4 * 3 - height - 20, 20, 20);
+
+        ctx.restore();
+    }
+
+    animateGIF(ctx) {
+        ctx.save();
+
+        // draw gif
+        ctx.drawImage(assetsLoader.assets.test.img, ctx.canvas.width / 2 + 50, ctx.canvas.height / 4 * 3 - 50, 100, 100);
+    
+        ctx.restore();
     }
 
     animate(ctx) {
@@ -915,6 +952,9 @@ sceneManager.addScene("test", class extends Scene {
 
         ctx.restore();
 
+        this.animateEnemy(ctx);
+        this.animatePlayer(ctx);
+        this.animateGIF(ctx);
         this.drawParticles(ctx);
     }
 
@@ -958,6 +998,15 @@ sceneManager.addScene("test", class extends Scene {
             particle.x += particle.velx * dt;
             particle.y += particle.vely * dt;
         });
+
+        this.animationTime += dt;
+    }
+
+    destroy() {
+        inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
+        assetsLoader.assets.test_track.fadeOutAndStop(10);
     }
 });
 

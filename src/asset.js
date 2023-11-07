@@ -47,12 +47,11 @@ class ImageAsset extends BaseAsset {
                     this.offscreenCanvas = new OffscreenCanvas(this.rawFrames[0].dims.width, this.rawFrames[0].dims.height);
                     this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
                         desynchronized: true,
-                        willReadFrequently: true
+                        willReadFrequently: true,
                     });
                     
                     this.frames = this.rawFrames.map(rawFrame => {
-                        const imageData = this.offscreenCtx.createImageData(rawFrame.dims.width, rawFrame.dims.height);
-                        imageData.data.set(rawFrame.patch);
+                        const imageData = new ImageData(rawFrame.patch, rawFrame.dims.width, rawFrame.dims.height);
                         this.offscreenCtx.putImageData(imageData, 0, 0);
                         return this.offscreenCanvas.transferToImageBitmap();
                     });
