@@ -554,10 +554,10 @@ sceneManager.addScene("game", class extends Scene {
             }
         }
 
+        let cursor = "default";
+
         if (hoverOverLight) {
-            canvasHandler.changeCursor("pointer");
-        } else {
-            canvasHandler.changeCursor("default");
+            cursor = "pointer";
         }
 
         // Player
@@ -578,9 +578,7 @@ sceneManager.addScene("game", class extends Scene {
             const userRight = inputSystem.isActionHeld("right") || (hoverOverRight && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, rightButton);
 
             if (hoverOverForward || hoverOverLeft || hoverOverBackward || hoverOverRight) {
-                canvasHandler.changeCursor("pointer");
-            } else {
-                canvasHandler.changeCursor("default");
+                cursor = "pointer";
             }
 
             if (userForward) {
@@ -697,6 +695,9 @@ sceneManager.addScene("game", class extends Scene {
         // Camera
         this.camera.x = lerp(this.camera.x, this.player.x, 0.5 + Math.sin(Date.now() / 100) * 0.1);
         this.camera.y = lerp(this.camera.y, this.player.y, 0.5 + Math.sin(Date.now() / 100) * 0.1);
+
+        // Cursor
+        canvasHandler.changeCursor(cursor);
     }
 
     destroy() {
