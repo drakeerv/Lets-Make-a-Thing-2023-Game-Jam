@@ -572,12 +572,12 @@ sceneManager.addScene("game", class extends Scene {
             const hoverOverBackward = isInside(inputSystem.mouse, backwardButton);
             const hoverOverRight = isInside(inputSystem.mouse, rightButton);
 
-            const userForward = inputSystem.isActionHeld("forward") || (hoverOverForward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, forwardButton);
-            const userBackward = inputSystem.isActionHeld("backward") || (hoverOverBackward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, backwardButton);
-            const userLeft = inputSystem.isActionHeld("left") || (hoverOverLeft && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, leftButton);
-            const userRight = inputSystem.isActionHeld("right") || (hoverOverRight && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, rightButton);
+            const userForward = inputSystem.isActionHeld("forward") || (((hoverOverForward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, forwardButton)) && IS_MOBILE);
+            const userBackward = inputSystem.isActionHeld("backward") || (((hoverOverBackward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, backwardButton)) && IS_MOBILE);
+            const userLeft = inputSystem.isActionHeld("left") || (((hoverOverLeft && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, leftButton)) && IS_MOBILE);
+            const userRight = inputSystem.isActionHeld("right") || (((hoverOverRight && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, rightButton)) && IS_MOBILE);
 
-            if (hoverOverForward || hoverOverLeft || hoverOverBackward || hoverOverRight) {
+            if ((hoverOverForward || hoverOverLeft || hoverOverBackward || hoverOverRight) && IS_MOBILE) {
                 cursor = "pointer";
             }
 
