@@ -59,9 +59,9 @@ let mazeCols = 5;
 let mazeRows = 5;
 let passedLevels = 0;
 let redirectedFromMenu = false;
-let showKeys = localStorage.getItem("showKeys") == null ? true : localStorage.getItem("showKeys") == "true";
-let hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
-let highScore = parseInt(localStorage.getItem("highScore")) || 0;
+let showKeys = true;
+let hasSeenTutorial = false;
+let highScore = 0;
 
 // Functions
 
@@ -69,6 +69,21 @@ function setHighScore(score) {
     highScore = score;
     localStorage.setItem("highScore", highScore);
 }
+
+function readLocalStorage() {
+    showKeys = localStorage.getItem("showKeys") == null ? true : localStorage.getItem("showKeys") == "true";
+    hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
+    highScore = parseInt(localStorage.getItem("highScore")) || 0;
+}
+
+function resetLocalStorage() {
+    localStorage.clear();
+    readLocalStorage();
+}
+
+// Local Storage
+
+readLocalStorage();
 
 // Scenes
 
@@ -839,20 +854,52 @@ sceneManager.addScene("credits", class extends Scene {
         ctx.font = "15px Retro";
         ctx.fillText("Back", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
 
+        // draw reset button
+        ctx.fillStyle = "red";
+        ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 200, 200, 20);
+
+        // draw reset text
+        ctx.fillStyle = "black";
+        ctx.font = "15px Retro";
+        ctx.fillText("Reset Game", ctx.canvas.width / 2, ctx.canvas.height / 2 + 215);
+
         ctx.restore();
     }
 
     update(dt) {
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
-            canvasHandler.changeCursor("pointer");
+    //     if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+    //         canvasHandler.changeCursor("pointer");
 
-            if (inputSystem.mouse.left) {
-                assetsLoader.assets.button_sound.playFromStart();
+    //         if (inputSystem.mouse.left) {
+    //             assetsLoader.assets.button_sound.playFromStart();
+    //             canvasHandler.changeCursor("default");
+    //             sceneManager.setCurrentScene("menu");
+    //         }
+    //     } else {
+    //         canvasHandler.changeCursor("default");
+    //     }
+        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
+            if (inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+                // Back
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    assetsLoader.assets.button_sound.playFromStart();
+                    canvasHandler.changeCursor("default");
+                    sceneManager.setCurrentScene("menu");
+                }
+            } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 200 && inputSystem.mouse.y < ctx.canvas.height / 2 + 220) {
+                // Reset Game
+                canvasHandler.changeCursor("pointer");
+
+                if (inputSystem.mouse.left) {
+                    assetsLoader.assets.button_sound.playFromStart();
+                    canvasHandler.changeCursor("default");
+                    resetLocalStorage();
+                }
+            } else {
                 canvasHandler.changeCursor("default");
-                sceneManager.setCurrentScene("menu");
             }
-        } else {
-            canvasHandler.changeCursor("default");
         }
     }
 
@@ -1062,7 +1109,7 @@ filterGl.shaderSource(filterFragShader, `
 
     float rand(vec2 co){
         float r = fract(sin(dot(co + randomizer, vec2(12.9898, 78.233))) * 43758.5453);
-        randomizer = mod(randomizer + r + 0.1, 1.0);
+        randomizer = mod(sin(randomizer + r + 0.1), 1.0);
         return r;
     }
     
