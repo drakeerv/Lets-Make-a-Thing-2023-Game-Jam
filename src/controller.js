@@ -170,9 +170,9 @@ class InputSystem {
         this.canvas.addEventListener("mousedown", this._onMouseDown.bind(this));
         window.addEventListener("mouseup", this._onMouseUp.bind(this));
 
-        this.canvas.addEventListener("touchstart", this._onTouchStart.bind(this));
-        this.canvas.addEventListener("touchmove", this._onTouchMove.bind(this));
-        this.canvas.addEventListener("touchend", this._onTouchEnd.bind(this));
+        // this.canvas.addEventListener("touchstart", this._onTouchStart.bind(this));
+        // this.canvas.addEventListener("touchmove", this._onTouchMove.bind(this));
+        // this.canvas.addEventListener("touchend", this._onTouchEnd.bind(this));
     }
 
     isActionHeld(action) {
