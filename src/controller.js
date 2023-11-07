@@ -6,6 +6,11 @@ class InputSystem {
         // A input handler that can handle held keys, single use keys, and controllers
         this.heldKeys = [];
         this.keyPressListeners = {};
+        this.mouseClickListeners = {
+            left: [],
+            right: [],
+            middle: []
+        };
         this.mouse = {x: 0, y: 0, left: false, right: false, middle: false};
         this.currentId = 0;
 
@@ -56,6 +61,17 @@ class InputSystem {
         }
     }
 
+    _onMouseClick(event) {
+        const button = event.button;
+        if (button === 0) {
+            this.mouseClickListeners.left.forEach(data => data.callback());
+        } else if (button === 1) {
+            this.mouseClickListeners.middle.forEach(data => data.callback());
+        } else if (button === 2) {
+            this.mouseClickListeners.right.forEach(data => data.callback());
+        }
+    }
+
     getActionFromKey(key) {
         for (const action in this.inputMap) {
             if (this.inputMap[action].includes(key)) {
@@ -93,10 +109,27 @@ class InputSystem {
         }
     }
 
+    addClickListener(callback, button) {
+        this.mouseClickListeners[button].push({
+            id: this.currentId++,
+            callback: callback
+        });
+
+        return this.currentId - 1;
+    }
+
+    removeClickListener(id, button) {
+        const index = this.mouseClickListeners[button].findIndex(listener => listener.id === id);
+        if (index > -1) {
+            this.mouseClickListeners[button].splice(index, 1);
+        }
+    }
+
     _setupListeners() {
         this.canvas.addEventListener("keydown", this._onKeyDown.bind(this));
         window.addEventListener("keyup", this._onKeyUp.bind(this));
 
+        this.canvas.addEventListener("click", this._onMouseClick.bind(this));
         this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
         this.canvas.addEventListener("mousedown", this._onMouseDown.bind(this));
         window.addEventListener("mouseup", this._onMouseUp.bind(this));

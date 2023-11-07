@@ -78,7 +78,6 @@ function generateMaze(width, height) {
         if (nextNeighbor) {
             stack.push(current);
             removeWallBetweenCells(current, nextNeighbor);
-            console.log("removed wall between", current, nextNeighbor);
             current = nextNeighbor;
             maze[current.y][current.x].visited = true;
         } else if (stack.length > 0) {

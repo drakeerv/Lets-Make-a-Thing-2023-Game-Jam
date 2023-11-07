@@ -5,7 +5,7 @@ import InputSystem from "./src/controller.js";
 import CanvasHandler from "./src/canvas.js";
 import generateMaze from "./src/maze.js";
 import { Scene, SceneManager } from "./src/scene.js";
-import { lerp } from "./src/math.js";
+import { lerp, isInside } from "./src/math.js";
 
 // Canvas
 
@@ -97,12 +97,13 @@ sceneManager.addScene("tutorial", class extends Scene {
 
         redirectedFromMenu = false;
         hasSeenTutorial = true;
-        
+
         localStorage.setItem("hasSeenTutorial", "true");
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
             sceneManager.setCurrentScene("menu");
         }, "quit");
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
     }
 
     animate(ctx) {
@@ -120,7 +121,7 @@ sceneManager.addScene("tutorial", class extends Scene {
         ctx.drawImage(assetsLoader.assets.key_a.img, ctx.canvas.width / 2 - 75, ctx.canvas.height / 4 + 75, 50, 50);
         ctx.drawImage(assetsLoader.assets.key_s.img, ctx.canvas.width / 2 - 25, ctx.canvas.height / 4 + 75, 50, 50);
         ctx.drawImage(assetsLoader.assets.key_d.img, ctx.canvas.width / 2 + 25, ctx.canvas.height / 4 + 75, 50, 50);
-        
+
         // draw tutorial text
         ctx.fillStyle = "white";
         ctx.font = "15px Retro";
@@ -158,20 +159,20 @@ sceneManager.addScene("tutorial", class extends Scene {
         ctx.restore();
     }
 
-    update(dt) {
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 4 + 400 && inputSystem.mouse.y < ctx.canvas.height / 4 + 420) {
-            canvasHandler.changeCursor("pointer");
-
-            if (inputSystem.mouse.left) {
-                assetsLoader.assets.button_sound.playFromStart();
-                canvasHandler.changeCursor("default");
-
-                if (this.redirectedFromMenu) {
-                    sceneManager.setCurrentScene("menu");
-                } else {
-                    sceneManager.setCurrentScene("game");
-                }
+    onClick() {
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+            assetsLoader.assets.button_sound.playFromStart();
+            if (this.redirectedFromMenu) {
+                sceneManager.setCurrentScene("menu");
+            } else {
+                sceneManager.setCurrentScene("game");
             }
+        }
+    }
+
+    update(dt) {
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+            canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
         }
@@ -179,6 +180,8 @@ sceneManager.addScene("tutorial", class extends Scene {
 
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
     }
 });
 
@@ -189,6 +192,7 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
             sceneManager.setCurrentScene("menu");
         }, "quit");
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
     }
 
     animate(ctx) {
@@ -223,31 +227,21 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
         ctx.restore();
     }
 
+    onClick() {
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+            assetsLoader.assets.button_sound.playFromStart();
+            sceneManager.setCurrentScene("tutorial");
+        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+            assetsLoader.assets.button_sound.playFromStart();
+            sceneManager.setCurrentScene("game");
+        }
+    }
+
     update(dt) {
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
-            if (inputSystem.mouse.y > ctx.canvas.height / 2 + 100 && inputSystem.mouse.y < ctx.canvas.height / 2 + 120) {
-                // See Tutorial
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    canvasHandler.changeCursor("default");
-                    sceneManager.setCurrentScene("tutorial");
-                }
-            } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 190) {
-                // Continue
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    hasSeenTutorial = true;
-                    localStorage.setItem("hasSeenTutorial", "true");
-                    canvasHandler.changeCursor("default");
-                    sceneManager.setCurrentScene("game");
-                }
-            } else {
-                canvasHandler.changeCursor("default");
-            }
+        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+            canvasHandler.changeCursor("pointer");
+        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+            canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
         }
@@ -255,6 +249,8 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
 
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
     }
 });
 
@@ -525,7 +521,7 @@ sceneManager.addScene("game", class extends Scene {
                 this.lightOn = true;
                 this.lightOnTime = Date.now();
                 this.triggerSwitch();
-            }  
+            }
         }
 
         // Player
@@ -564,7 +560,7 @@ sceneManager.addScene("game", class extends Scene {
 
             const futureX = this.player.x + (this.player.velx * dt);
             const futureY = this.player.y + (this.player.vely * dt);
-            
+
             const futureCellX = Math.floor(futureX / MAZE_GRID_SIZE);
             const futureCellY = Math.floor(futureY / MAZE_GRID_SIZE);
 
@@ -591,7 +587,7 @@ sceneManager.addScene("game", class extends Scene {
                     this.touchingSides.right = false;
                     this.touchingSides.left = false;
                 }
-                
+
                 if (enterFutureBottom && hasBottomFace) {
                     this.player.vely = 0;
                     this.touchingSides.bottom = true;
@@ -680,6 +676,12 @@ sceneManager.addScene("gameOver", class extends Scene {
                 })
             }
         }
+
+        this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
+            sceneManager.setCurrentScene("menu");
+        }, "quit");
+
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
     }
 
     drawParticles(ctx) {
@@ -718,7 +720,7 @@ sceneManager.addScene("gameOver", class extends Scene {
         // Draw the menu button
         ctx.fillStyle = "white";
         ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 150, 200, 20);
-        
+
         ctx.fillStyle = "black";
         ctx.font = "15px Retro";
         ctx.fillText("Menu", ctx.canvas.width / 2, ctx.canvas.height / 2 + 165);
@@ -728,15 +730,17 @@ sceneManager.addScene("gameOver", class extends Scene {
         this.drawParticles(ctx);
     }
 
-    update(dt) {
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
-            canvasHandler.changeCursor("pointer");
+    onClick() {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
+            // Menu
+            assetsLoader.assets.button_sound.playFromStart();
+            sceneManager.setCurrentScene("menu");
+        }
+    }
 
-            if (inputSystem.mouse.left) {
-                assetsLoader.assets.button_sound.playFromStart();
-                canvasHandler.changeCursor("default");
-                sceneManager.setCurrentScene("menu");
-            }
+    update(dt) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
+            canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
         }
@@ -757,6 +761,8 @@ sceneManager.addScene("gameOver", class extends Scene {
 
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
     }
 });
 
@@ -817,11 +823,15 @@ sceneManager.addScene("credits", class extends Scene {
             sceneManager.setCurrentScene("menu");
         }, "quit");
 
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
+
         this.credits = fetch("credits.txt").then((response) => {
             return response.text();
         }).then((text) => {
             this.credits = text.split("\n");
         });
+
+        this.confirmResetScreen = false;
     }
 
     animate(ctx) {
@@ -863,40 +873,80 @@ sceneManager.addScene("credits", class extends Scene {
         ctx.font = "15px Retro";
         ctx.fillText("Reset Game", ctx.canvas.width / 2, ctx.canvas.height / 2 + 215);
 
+        // draw modal
+        if (this.confirmResetScreen) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            ctx.fillStyle = "grey";
+            ctx.fillRect(ctx.canvas.width / 2 - 150, ctx.canvas.height / 2 - 100, 300, 300);
+
+            ctx.fillStyle = "white";
+            ctx.font = "30px Retro";
+            ctx.textAlign = "center";
+            ctx.fillText("Are you sure?", ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+            // draw yes button
+            ctx.fillStyle = "green";
+            ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 50, 200, 20);
+
+            // draw yes text
+            ctx.fillStyle = "black";
+            ctx.font = "15px Retro";
+            ctx.fillText("Yes", ctx.canvas.width / 2, ctx.canvas.height / 2 + 65);
+
+            // draw no button
+            ctx.fillStyle = "red";
+            ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 2 + 100, 200, 20);
+
+            // draw no text
+            ctx.fillStyle = "black";
+            ctx.font = "15px Retro";
+            ctx.fillText("No", ctx.canvas.width / 2, ctx.canvas.height / 2 + 115);
+        }
+
         ctx.restore();
     }
 
-    update(dt) {
-    //     if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100 && inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
-    //         canvasHandler.changeCursor("pointer");
-
-    //         if (inputSystem.mouse.left) {
-    //             assetsLoader.assets.button_sound.playFromStart();
-    //             canvasHandler.changeCursor("default");
-    //             sceneManager.setCurrentScene("menu");
-    //         }
-    //     } else {
-    //         canvasHandler.changeCursor("default");
-    //     }
-        if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
-            if (inputSystem.mouse.y > ctx.canvas.height / 2 + 150 && inputSystem.mouse.y < ctx.canvas.height / 2 + 170) {
+    onClick() {
+        if (this.confirmResetScreen) {
+            if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 50, width: 200, height: 20 })) {
+                // Yes
+                assetsLoader.assets.button_sound.playFromStart();
+                resetLocalStorage();
+                this.confirmResetScreen = false;
+            } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
+                // No
+                assetsLoader.assets.button_sound.playFromStart();
+                this.confirmResetScreen = false;
+            }
+        } else {
+            if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
                 // Back
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    canvasHandler.changeCursor("default");
-                    sceneManager.setCurrentScene("menu");
-                }
-            } else if (inputSystem.mouse.y > ctx.canvas.height / 2 + 200 && inputSystem.mouse.y < ctx.canvas.height / 2 + 220) {
+                assetsLoader.assets.button_sound.playFromStart();
+                sceneManager.setCurrentScene("menu");
+            } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 200, width: 200, height: 20 })) {
                 // Reset Game
-                canvasHandler.changeCursor("pointer");
+                assetsLoader.assets.button_sound.playFromStart();
+                this.confirmResetScreen = true;
+            }
+        }
+    }
 
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    canvasHandler.changeCursor("default");
-                    resetLocalStorage();
-                }
+    update(dt) {
+        if (this.confirmResetScreen) {
+            if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 50, width: 200, height: 20 })) {
+                canvasHandler.changeCursor("pointer");
+            } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
+                canvasHandler.changeCursor("pointer");
+            } else {
+                canvasHandler.changeCursor("default");
+            }
+        } else {
+            if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
+                canvasHandler.changeCursor("pointer");
+            } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 200, width: 200, height: 20 })) {
+                canvasHandler.changeCursor("pointer");
             } else {
                 canvasHandler.changeCursor("default");
             }
@@ -905,6 +955,8 @@ sceneManager.addScene("credits", class extends Scene {
 
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
     }
 });
 
@@ -915,6 +967,8 @@ sceneManager.addScene("menu", class extends Scene {
         mazeCols = 5;
         mazeRows = 5;
         passedLevels = 0;
+
+        this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
     }
 
     animate(ctx) {
@@ -942,7 +996,7 @@ sceneManager.addScene("menu", class extends Scene {
         ctx.fillStyle = "black";
         ctx.font = "15px Retro";
         ctx.fillText("Credits", ctx.canvas.width / 2 - 175, ctx.canvas.height / 2 + 65);
-        
+
         // draw tutorial text
         ctx.fillStyle = "black";
         ctx.font = "15px Retro";
@@ -951,47 +1005,45 @@ sceneManager.addScene("menu", class extends Scene {
         ctx.restore();
     }
 
-    update(dt) {
-        // inverse if statement
-        if (inputSystem.mouse.y > ctx.canvas.height / 2 + 50 && inputSystem.mouse.y < ctx.canvas.height / 2 + 70) {
-            if (inputSystem.mouse.x > ctx.canvas.width / 2 - 100 && inputSystem.mouse.x < ctx.canvas.width / 2 + 100) {
-                // Play
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    canvasHandler.changeCursor("default");
-                    if (hasSeenTutorial) {
-                        sceneManager.setCurrentScene("game");
-                    } else {
-                        sceneManager.setCurrentScene("hasNotSeenTutorial");
-                    }
-                }
-            } else if (inputSystem.mouse.x > ctx.canvas.width / 2 - 225 && inputSystem.mouse.x < ctx.canvas.width / 2 - 125) {
-                // Options
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    sceneManager.setCurrentScene("credits");
-                    canvasHandler.changeCursor("default");
-                }
-            } else if (inputSystem.mouse.x > ctx.canvas.width / 2 + 125 && inputSystem.mouse.x < ctx.canvas.width / 2 + 225) {
-                // Tutorial
-                canvasHandler.changeCursor("pointer");
-
-                if (inputSystem.mouse.left) {
-                    assetsLoader.assets.button_sound.playFromStart();
-                    redirectedFromMenu = true;
-                    sceneManager.setCurrentScene("tutorial");
-                    canvasHandler.changeCursor("default");
-                }
+    onClick() {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 50, width: 200, height: 20 })) {
+            // Play
+            assetsLoader.assets.button_sound.playFromStart();
+            if (hasSeenTutorial) {
+                sceneManager.setCurrentScene("game");
             } else {
-                canvasHandler.changeCursor("default");
+                sceneManager.setCurrentScene("hasNotSeenTutorial");
             }
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 225, y: ctx.canvas.height / 2 + 50, width: 100, height: 20 })) {
+            // Options
+            assetsLoader.assets.button_sound.playFromStart();
+            sceneManager.setCurrentScene("credits");
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 + 125, y: ctx.canvas.height / 2 + 50, width: 100, height: 20 })) {
+            // Tutorial
+            assetsLoader.assets.button_sound.playFromStart();
+            redirectedFromMenu = true;
+            sceneManager.setCurrentScene("tutorial");
+        }
+    }
+
+    update(dt) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 50, width: 200, height: 20 })) {
+            // Play
+            canvasHandler.changeCursor("pointer");
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 225, y: ctx.canvas.height / 2 + 50, width: 100, height: 20 })) {
+            // Options
+            canvasHandler.changeCursor("pointer");
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 + 125, y: ctx.canvas.height / 2 + 50, width: 100, height: 20 })) {
+            // Tutorial
+            canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
         }
+    }
+
+    destroy() {
+        inputSystem.removeClickListener(this.leftClickListener, "left");
+        canvasHandler.changeCursor("default");
     }
 });
 
