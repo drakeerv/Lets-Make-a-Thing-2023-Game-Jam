@@ -75,6 +75,7 @@ class InputSystem {
 
     _onTouchStart(event) {
         event.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
             this.touches.push({
@@ -83,10 +84,17 @@ class InputSystem {
                 y: touch.clientY - rect.top
             });
         }
+
+        this.mouse.x = this.touches[0].x;
+        this.mouse.y = this.touches[0].y;
+        this.mouse.left = true;
+
+        this.mouseClickListeners.left.forEach(data => data.callback());
     }
 
     _onTouchMove(event) {
         event.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
             const index = this.touches.findIndex(t => t.id === touch.identifier);
@@ -95,6 +103,10 @@ class InputSystem {
                 this.touches[index].y = touch.clientY - rect.top;
             }
         }
+
+        this.mouse.x = this.touches[0].x;
+        this.mouse.y = this.touches[0].y;
+        this.mouse.left = true;
     }
 
     _onTouchEnd(event) {
@@ -105,6 +117,16 @@ class InputSystem {
             if (index > -1) {
                 this.touches.splice(index, 1);
             }
+        }
+
+        if (this.touches.length > 0) {
+            this.mouse.x = this.touches[0].x;
+            this.mouse.y = this.touches[0].y;
+            this.mouse.left = true;
+        } else {
+            this.mouse.x = 0;
+            this.mouse.y = 0;
+            this.mouse.left = false;
         }
     }
 
