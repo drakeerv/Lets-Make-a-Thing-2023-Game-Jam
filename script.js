@@ -5,7 +5,8 @@ import InputSystem from "./src/controller.js";
 import CanvasHandler from "./src/canvas.js";
 import generateMaze from "./src/maze.js";
 import { Scene, SceneManager } from "./src/scene.js";
-import { lerp, isInside } from "./src/math.js";
+import { lerp, isInside, isTouchInside } from "./src/math.js";
+import { isMobile } from "./src/checks.js";
 
 // Canvas
 
@@ -20,6 +21,7 @@ const canvasHandler = new CanvasHandler(canvas);
 
 const MAZE_GRID_SIZE = 100;
 const MAZE_LINE_WIDTH = 5;
+const IS_MOBILE = isMobile();
 
 // Assets
 
@@ -59,7 +61,7 @@ let mazeCols = 5;
 let mazeRows = 5;
 let passedLevels = 0;
 let redirectedFromMenu = false;
-let showKeys = true;
+let showKeys = IS_MOBILE ? false : true;
 let hasSeenTutorial = false;
 let highScore = 0;
 
@@ -71,7 +73,7 @@ function setHighScore(score) {
 }
 
 function readLocalStorage() {
-    showKeys = localStorage.getItem("showKeys") == null ? true : localStorage.getItem("showKeys") == "true";
+    showKeys = localStorage.getItem("showKeys") == null ? showKeys : localStorage.getItem("showKeys") == "true";
     hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
     highScore = parseInt(localStorage.getItem("highScore")) || 0;
 }
@@ -97,7 +99,6 @@ sceneManager.addScene("tutorial", class extends Scene {
 
         redirectedFromMenu = false;
         hasSeenTutorial = true;
-
         localStorage.setItem("hasSeenTutorial", "true");
 
         this.escapeKeyListener = inputSystem.addKeyPressListener(() => {
@@ -233,6 +234,10 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
             sceneManager.setCurrentScene("tutorial");
         } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
             assetsLoader.assets.button_sound.playFromStart();
+
+            hasSeenTutorial = true;
+            localStorage.setItem("hasSeenTutorial", "true");
+
             sceneManager.setCurrentScene("game");
         }
     }
@@ -467,6 +472,29 @@ sceneManager.addScene("game", class extends Scene {
             ctx.fillText("Quit", ctx.canvas.width - 90, 380);
         }
 
+        // draw 4 mobile buttons using arrows as text at the bottom left in 
+        if (IS_MOBILE) {
+            if (this.lightOn) {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+            } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            }
+        
+            ctx.fillRect(ctx.canvas.width - 300, ctx.canvas.height - 400, 100, 100);
+            ctx.fillRect(ctx.canvas.width - 400, ctx.canvas.height - 300, 100, 100);
+            ctx.fillRect(ctx.canvas.width - 200, ctx.canvas.height - 300, 100, 100);
+            ctx.fillRect(ctx.canvas.width - 300, ctx.canvas.height - 200, 100, 100);
+
+            ctx.fillStyle = "white";
+            ctx.font = "50px Retro";
+            ctx.textAlign = "center";
+
+            ctx.fillText("↑", ctx.canvas.width - 250, ctx.canvas.height - 335);
+            ctx.fillText("←", ctx.canvas.width - 350, ctx.canvas.height - 235);
+            ctx.fillText("→", ctx.canvas.width - 150, ctx.canvas.height - 235);
+            ctx.fillText("↓", ctx.canvas.width - 250, ctx.canvas.height - 135);
+        }
+
         ctx.restore();
     }
 
@@ -513,44 +541,73 @@ sceneManager.addScene("game", class extends Scene {
         this.updateParticles(dt);
 
         // Light switch
-        if (inputSystem.isActionHeld("light") != this.lightOn) {
-            if (!inputSystem.isActionHeld("light") && this.lightOn && Date.now() - this.lightOnTime > 1000) {
+        const hoverOverLight = isInside(inputSystem.mouse, {x: 20, y: ctx.canvas.height / 2 - 100, width: 110, height: 200});
+        const userLightOn = inputSystem.isActionHeld("light") || (hoverOverLight && inputSystem.mouse.left);
+        if (userLightOn != this.lightOn) {
+            if (!userLightOn && this.lightOn && Date.now() - this.lightOnTime > 1000) {
                 this.lightOn = false;
                 this.triggerSwitch();
-            } else if (inputSystem.isActionHeld("light") && !this.lightOn) {
+            } else if (userLightOn && !this.lightOn) {
                 this.lightOn = true;
                 this.lightOnTime = Date.now();
                 this.triggerSwitch();
             }
         }
 
+        if (hoverOverLight) {
+            canvasHandler.changeCursor("pointer");
+        } else {
+            canvasHandler.changeCursor("default");
+        }
+
         // Player
         if (!this.lightOn) {
-            if (inputSystem.isActionHeld("forward")) {
+            const forwardButton = {x: ctx.canvas.width - 300, y: ctx.canvas.height - 400, width: 100, height: 100};
+            const leftButton = {x: ctx.canvas.width - 400, y: ctx.canvas.height - 300, width: 100, height: 100};
+            const backwardButton = {x: ctx.canvas.width - 300, y: ctx.canvas.height - 200, width: 100, height: 100};
+            const rightButton = {x: ctx.canvas.width - 200, y: ctx.canvas.height - 300, width: 100, height: 100};
+
+            const hoverOverForward = isInside(inputSystem.mouse, forwardButton);
+            const hoverOverLeft = isInside(inputSystem.mouse, leftButton);
+            const hoverOverBackward = isInside(inputSystem.mouse, backwardButton);
+            const hoverOverRight = isInside(inputSystem.mouse, rightButton);
+
+            const userForward = inputSystem.isActionHeld("forward") || (hoverOverForward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, forwardButton);
+            const userBackward = inputSystem.isActionHeld("backward") || (hoverOverBackward && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, backwardButton);
+            const userLeft = inputSystem.isActionHeld("left") || (hoverOverLeft && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, leftButton);
+            const userRight = inputSystem.isActionHeld("right") || (hoverOverRight && inputSystem.mouse.left) || isTouchInside(inputSystem.touches, rightButton);
+
+            if (hoverOverForward || hoverOverLeft || hoverOverBackward || hoverOverRight) {
+                canvasHandler.changeCursor("pointer");
+            } else {
+                canvasHandler.changeCursor("default");
+            }
+
+            if (userForward) {
                 this.player.vely = -100;
             }
-            if (inputSystem.isActionHeld("backward")) {
+            if (userBackward) {
                 this.player.vely = 100;
             }
 
-            if (inputSystem.isActionHeld("left")) {
+            if (userLeft) {
                 this.player.velx = -100;
             }
-            if (inputSystem.isActionHeld("right")) {
+            if (userRight) {
                 this.player.velx = 100;
             }
 
-            if (!inputSystem.isActionHeld("forward") && !inputSystem.isActionHeld("backward")) {
+            if (!userForward && !userBackward) {
                 this.player.vely = 0;
             }
-            if (!inputSystem.isActionHeld("left") && !inputSystem.isActionHeld("right")) {
+            if (!userLeft && !userRight) {
                 this.player.velx = 0;
             }
 
-            if (inputSystem.isActionHeld("forward") && inputSystem.isActionHeld("backward")) {
+            if (userForward && userBackward) {
                 this.player.vely = 0;
             }
-            if (inputSystem.isActionHeld("left") && inputSystem.isActionHeld("right")) {
+            if (userLeft && userRight) {
                 this.player.velx = 0;
             }
 
@@ -638,9 +695,6 @@ sceneManager.addScene("game", class extends Scene {
         this.enemy.y += this.enemy.vely * dt;
 
         // Camera
-        // this.camera.x = lerp(this.camera.x, this.player.x, 0.5);
-        // this.camera.y = lerp(this.camera.y, this.player.y, 0.5);
-        // make a walking motion for the camera using sin and lerp along the axis of movement
         this.camera.x = lerp(this.camera.x, this.player.x, 0.5 + Math.sin(Date.now() / 100) * 0.1);
         this.camera.y = lerp(this.camera.y, this.player.y, 0.5 + Math.sin(Date.now() / 100) * 0.1);
     }
@@ -648,6 +702,7 @@ sceneManager.addScene("game", class extends Scene {
     destroy() {
         inputSystem.removeKeyPressListener(this.escapeKeyListener, "quit");
         inputSystem.removeKeyPressListener(this.showKeysKeyListener, "keys");
+        canvasHandler.changeCursor("default");
         assetsLoader.assets.track1.fadeOutAndStop(10);
     }
 });

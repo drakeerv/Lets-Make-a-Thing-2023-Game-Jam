@@ -7,4 +7,12 @@ function isInside(pos, rect) {
         pos.y >= rect.y && pos.y <= rect.y + rect.height;
 }
 
-export { lerp, isInside };
+function isTouchInside(touches, rect) {
+    for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        if (isInside(touch, rect)) return true;
+    }
+    return false;
+}
+
+export { lerp, isInside, isTouchInside };
