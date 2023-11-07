@@ -480,19 +480,19 @@ sceneManager.addScene("game", class extends Scene {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
             }
         
-            ctx.fillRect(ctx.canvas.width - 300, ctx.canvas.height - 400, 100, 100);
-            ctx.fillRect(ctx.canvas.width - 400, ctx.canvas.height - 300, 100, 100);
-            ctx.fillRect(ctx.canvas.width - 200, ctx.canvas.height - 300, 100, 100);
-            ctx.fillRect(ctx.canvas.width - 300, ctx.canvas.height - 200, 100, 100);
+            ctx.fillRect(ctx.canvas.width - 160, ctx.canvas.height - 240, 80, 80);
+            ctx.fillRect(ctx.canvas.width - 240, ctx.canvas.height - 160, 80, 80);
+            ctx.fillRect(ctx.canvas.width - 80, ctx.canvas.height - 160, 80, 80);
+            ctx.fillRect(ctx.canvas.width - 160, ctx.canvas.height - 80, 80, 80);
 
             ctx.fillStyle = "white";
-            ctx.font = "50px Retro";
+            ctx.font = "40px Retro";
             ctx.textAlign = "center";
 
-            ctx.fillText("↑", ctx.canvas.width - 250, ctx.canvas.height - 335);
-            ctx.fillText("←", ctx.canvas.width - 350, ctx.canvas.height - 235);
-            ctx.fillText("→", ctx.canvas.width - 150, ctx.canvas.height - 235);
-            ctx.fillText("↓", ctx.canvas.width - 250, ctx.canvas.height - 135);
+            ctx.fillText("↑", ctx.canvas.width - 120, ctx.canvas.height - 190);
+            ctx.fillText("←", ctx.canvas.width - 200, ctx.canvas.height - 110);
+            ctx.fillText("→", ctx.canvas.width - 40, ctx.canvas.height - 110);
+            ctx.fillText("↓", ctx.canvas.width - 120, ctx.canvas.height - 35);
         }
 
         ctx.restore();
@@ -562,10 +562,10 @@ sceneManager.addScene("game", class extends Scene {
 
         // Player
         if (!this.lightOn) {
-            const forwardButton = {x: ctx.canvas.width - 300, y: ctx.canvas.height - 400, width: 100, height: 100};
-            const leftButton = {x: ctx.canvas.width - 400, y: ctx.canvas.height - 300, width: 100, height: 100};
-            const backwardButton = {x: ctx.canvas.width - 300, y: ctx.canvas.height - 200, width: 100, height: 100};
-            const rightButton = {x: ctx.canvas.width - 200, y: ctx.canvas.height - 300, width: 100, height: 100};
+            const forwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 240, width: 80, height: 80};
+            const leftButton = {x: ctx.canvas.width - 240, y: ctx.canvas.height - 160, width: 80, height: 80};
+            const backwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 80, width: 80, height: 80};
+            const rightButton = {x: ctx.canvas.width - 80, y: ctx.canvas.height - 160, width: 80, height: 80};
 
             const hoverOverForward = isInside(inputSystem.mouse, forwardButton);
             const hoverOverLeft = isInside(inputSystem.mouse, leftButton);
