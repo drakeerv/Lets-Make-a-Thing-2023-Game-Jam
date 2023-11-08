@@ -8,4 +8,4 @@ Music by David Robson and David Fesliyan. (https://www.fesliyanstudios.com/royal
 Button sound effect by Pixabay. (https://pixabay.com/sound-effects/ui-click-97915/)
 
 Thank you for playing!
-(V1.3.6)
+(V1.3.7)

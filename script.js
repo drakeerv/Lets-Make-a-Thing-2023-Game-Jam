@@ -40,7 +40,9 @@ const assetsSources = {
     "track1_track": "assets/music/track1.ogg",
     "button_sound": "assets/button.ogg",
     "test_track": "assets/music/test.ogg",
-    "test": "assets/test.gif"
+    "test": "assets/test.gif",
+    "filter_vert": "assets/filter/vert.opt.glsl",
+    "filter_frag": "assets/filter/frag.opt.glsl"
 }
 const assetsLoader = new AssetLoader(assetsSources);
 assetsLoader.startLoadAssets();
@@ -161,7 +163,7 @@ sceneManager.addScene("tutorial", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             if (this.redirectedFromMenu) {
                 sceneManager.setCurrentScene("menu");
@@ -172,7 +174,7 @@ sceneManager.addScene("tutorial", class extends Scene {
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
@@ -228,10 +230,10 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             sceneManager.setCurrentScene("tutorial");
-        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
 
             hasSeenTutorial = true;
@@ -242,9 +244,9 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
-        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
@@ -462,7 +464,7 @@ sceneManager.addScene("game", class extends Scene {
             } else {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
             }
-        
+
             ctx.fillRect(ctx.canvas.width - 160, ctx.canvas.height - 240, 80, 80);
             ctx.fillRect(ctx.canvas.width - 240, ctx.canvas.height - 160, 80, 80);
             ctx.fillRect(ctx.canvas.width - 80, ctx.canvas.height - 160, 80, 80);
@@ -524,7 +526,7 @@ sceneManager.addScene("game", class extends Scene {
         this.updateParticles(dt);
 
         // Light switch
-        const hoverOverLight = isInside(inputSystem.mouse, {x: 20, y: ctx.canvas.height / 2 - 100, width: 110, height: 200});
+        const hoverOverLight = isInside(inputSystem.mouse, { x: 20, y: ctx.canvas.height / 2 - 100, width: 110, height: 200 });
         const userLightOn = inputSystem.isActionHeld("light") || (hoverOverLight && inputSystem.mouse.left);
         if (userLightOn != this.lightOn) {
             if (!userLightOn && this.lightOn && Date.now() - this.lightOnTime > 1000) {
@@ -545,10 +547,10 @@ sceneManager.addScene("game", class extends Scene {
 
         // Player
         if (!this.lightOn) {
-            const forwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 240, width: 80, height: 80};
-            const leftButton = {x: ctx.canvas.width - 240, y: ctx.canvas.height - 160, width: 80, height: 80};
-            const backwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 80, width: 80, height: 80};
-            const rightButton = {x: ctx.canvas.width - 80, y: ctx.canvas.height - 160, width: 80, height: 80};
+            const forwardButton = { x: ctx.canvas.width - 160, y: ctx.canvas.height - 240, width: 80, height: 80 };
+            const leftButton = { x: ctx.canvas.width - 240, y: ctx.canvas.height - 160, width: 80, height: 80 };
+            const backwardButton = { x: ctx.canvas.width - 160, y: ctx.canvas.height - 80, width: 80, height: 80 };
+            const rightButton = { x: ctx.canvas.width - 80, y: ctx.canvas.height - 160, width: 80, height: 80 };
 
             const hoverOverForward = isInside(inputSystem.mouse, forwardButton);
             const hoverOverLeft = isInside(inputSystem.mouse, leftButton);
@@ -889,7 +891,7 @@ sceneManager.addScene("test", class extends Scene {
 
         // draw dancing player and enemies to the beat of the song
         ctx.fillStyle = "green";
-        
+
         const height = 15 + Math.abs(Math.sin(this.animationTime * this.speed * Math.PI)) * 5;
         ctx.fillRect(ctx.canvas.width / 2 - 10, ctx.canvas.height / 4 * 3 - height, 20, height);
 
@@ -900,7 +902,7 @@ sceneManager.addScene("test", class extends Scene {
         ctx.save();
 
         ctx.fillStyle = "red";
-        
+
         const height = Math.abs(Math.cos(this.animationTime * this.speed * Math.PI)) * 15;
         ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 4 * 3 - height - 20, 20, 20);
 
@@ -912,7 +914,7 @@ sceneManager.addScene("test", class extends Scene {
 
         // draw gif
         ctx.drawImage(assetsLoader.assets.test.img, ctx.canvas.width / 2 + 50, ctx.canvas.height / 4 * 3 - 50, 100, 100);
-    
+
         ctx.restore();
     }
 
@@ -959,14 +961,14 @@ sceneManager.addScene("test", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             sceneManager.setCurrentScene("menu");
         }
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
@@ -1302,15 +1304,15 @@ sceneManager.addOverlay("debug", class extends Scene {
         ctx.save();
 
         ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, 150, 160);
+        ctx.fillRect(ctx.canvas.width / 2 - 75, 0, 150, 160);
         ctx.fillStyle = "white";
-        ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), 10, 20);
-        ctx.fillText("FPS: " + Math.round(canvasHandler.fps), 10, 40);
-        ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, 10, 60);
-        ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, 10, 80);
-        ctx.fillText("Current Scene: " + sceneManager.currentScene.name, 10, 100);
-        ctx.fillText("Current Overlay: " + sceneManager.currentOverlay.name, 10, 120);
-        ctx.fillText("Is Mobile: " + IS_MOBILE, 10, 140);
+        ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), ctx.canvas.width / 2 - 65, 20);
+        ctx.fillText("FPS: " + Math.round(canvasHandler.fps), ctx.canvas.width / 2 - 65, 40);
+        ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, ctx.canvas.width / 2 - 65, 60);
+        ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, ctx.canvas.width / 2 - 65, 80);
+        ctx.fillText("Current Scene: " + sceneManager.currentScene.name, ctx.canvas.width / 2 - 65, 100);
+        ctx.fillText("Current Overlay: " + sceneManager.currentOverlay.name, ctx.canvas.width / 2 - 65, 120);
+        ctx.fillText("Is Mobile: " + IS_MOBILE, ctx.canvas.width / 2 - 65, 140);
 
         ctx.restore();
     }
@@ -1324,7 +1326,7 @@ sceneManager.addOverlay("debug", class extends Scene {
 
 const filterCanvas = document.getElementById("filter");
 const filterCanvasHandler = new CanvasHandler(filterCanvas);
-const filterGl = filterCanvas.getContext("webgl2", {
+const filterGl = filterCanvas.getContext(WebGL2RenderingContext ? "webgl2" : "webgl", {
     desynchronized: true
 });
 
@@ -1332,7 +1334,8 @@ const filterProgram = filterGl.createProgram();
 const filterVertShader = filterGl.createShader(filterGl.VERTEX_SHADER);
 const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
 
-filterGl.shaderSource(filterVertShader, `
+function setUpShader() {
+    filterGl.shaderSource(filterVertShader, `
     attribute vec2 a_position;
     attribute vec2 a_texCoord;
 
@@ -1344,7 +1347,7 @@ filterGl.shaderSource(filterVertShader, `
     }
 `);
 
-filterGl.shaderSource(filterFragShader, `
+    filterGl.shaderSource(filterFragShader, `
     precision mediump float;
 
     uniform sampler2D u_image;
@@ -1407,73 +1410,90 @@ filterGl.shaderSource(filterFragShader, `
     }
 `);
 
-filterGl.compileShader(filterVertShader);
-filterGl.compileShader(filterFragShader);
+    filterGl.compileShader(filterVertShader);
+    filterGl.compileShader(filterFragShader);
 
-filterGl.attachShader(filterProgram, filterVertShader);
-filterGl.attachShader(filterProgram, filterFragShader);
+    filterGl.attachShader(filterProgram, filterVertShader);
+    filterGl.attachShader(filterProgram, filterFragShader);
 
-filterGl.linkProgram(filterProgram);
-filterGl.useProgram(filterProgram);
-
-const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
-const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
-const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
-const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
-
-const filterPositionBuffer = filterGl.createBuffer();
-filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-    -1, -1,
-    1, -1,
-    -1, 1,
-    -1, 1,
-    1, -1,
-    1, 1
-]), filterGl.STATIC_DRAW);
-
-const filterTexCoordBuffer = filterGl.createBuffer();
-filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-    0, 0,
-    1, 0,
-    0, 1,
-    0, 1,
-    1, 0,
-    1, 1
-]), filterGl.STATIC_DRAW);
-
-const filterTexture = filterGl.createTexture();
-filterGl.bindTexture(filterGl.TEXTURE_2D, filterTexture);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_S, filterGl.CLAMP_TO_EDGE);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_T, filterGl.CLAMP_TO_EDGE);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MIN_FILTER, filterGl.NEAREST);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MAG_FILTER, filterGl.NEAREST);
-
-filterCanvasHandler.addResizeListener(() => {
-    filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
-});
-
-filterCanvasHandler.addAnimateListener(() => {
-    filterGl.clearColor(1, 1, 1, 1);
-    filterGl.colorMask(true, true, true, true);
-    filterGl.clear(filterGl.COLOR_BUFFER_BIT);
-
+    filterGl.linkProgram(filterProgram);
     filterGl.useProgram(filterProgram);
 
-    filterGl.enableVertexAttribArray(filterPositionLocation);
+    const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
+    const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
+    const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
+    const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
+
+    const filterPositionBuffer = filterGl.createBuffer();
     filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-    filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+        -1, -1,
+        1, -1,
+        -1, 1,
+        -1, 1,
+        1, -1,
+        1, 1
+    ]), filterGl.STATIC_DRAW);
 
-    filterGl.enableVertexAttribArray(filterTexCoordLocation);
+    const filterTexCoordBuffer = filterGl.createBuffer();
     filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-    filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+        0, 0,
+        1, 0,
+        0, 1,
+        0, 1,
+        1, 0,
+        1, 1
+    ]), filterGl.STATIC_DRAW);
 
-    filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
-    filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+    const filterTexture = filterGl.createTexture();
+    filterGl.bindTexture(filterGl.TEXTURE_2D, filterTexture);
+    filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_S, filterGl.CLAMP_TO_EDGE);
+    filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_T, filterGl.CLAMP_TO_EDGE);
+    filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MIN_FILTER, filterGl.NEAREST);
+    filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MAG_FILTER, filterGl.NEAREST);
 
-    filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+    filterCanvasHandler.addResizeListener(() => {
+        filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
+    });
+
+    filterCanvasHandler.addAnimateListener(() => {
+        filterGl.clearColor(1, 1, 1, 1);
+        filterGl.colorMask(true, true, true, true);
+        filterGl.clear(filterGl.COLOR_BUFFER_BIT);
+
+        filterGl.useProgram(filterProgram);
+
+        filterGl.enableVertexAttribArray(filterPositionLocation);
+        filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
+        filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+        filterGl.enableVertexAttribArray(filterTexCoordLocation);
+        filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
+        filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+        filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
+        filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+
+        filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+    });
+}
+
+const loadedShaders = {"frag": false, "vert": false};
+assetsLoader.assets.filter_vert.onLoad(() => {
+    loadedShaders.vert = true;
+    if (loadedShaders.frag) {
+        setUpShader();
+    }
 });
+assetsLoader.assets.filter_frag.onLoad(() => {
+    loadedShaders.frag = true;
+    if (loadedShaders.vert) {
+        setUpShader();
+    }
+});
+
+// Set up game
 
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
