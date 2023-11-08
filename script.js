@@ -286,7 +286,7 @@ sceneManager.addScene("game", class extends Scene {
         if (passedLevels >= 5) {
             this.enemies.push({
                 x: MAZE_GRID_SIZE * (mazeCols - 1) + MAZE_GRID_SIZE / 2,
-                y: 0,
+                y: MAZE_GRID_SIZE / 2,
                 velx: 0,
                 vely: 0
             });
@@ -294,7 +294,7 @@ sceneManager.addScene("game", class extends Scene {
 
         if (passedLevels >= 10) {
             this.enemies.push({
-                x: 0,
+                x: MAZE_GRID_SIZE / 2,
                 y: MAZE_GRID_SIZE * (mazeRows - 1) + MAZE_GRID_SIZE / 2,
                 velx: 0,
                 vely: 0
@@ -1480,3 +1480,9 @@ canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
 
 sceneManager.setCurrentScene("loading");
 sceneManager.setOverlayScene("debug");
+
+// Export
+window.sceneManager = sceneManager;
+window.inputSystem = inputSystem;
+window.canvasHandler = canvasHandler;
+window.assetsLoader = assetsLoader;
