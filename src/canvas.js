@@ -1,3 +1,5 @@
+"use strict";
+
 class CanvasHandler {
     constructor(canvas, updateRate = 60) {
         this.canvas = canvas;
@@ -12,7 +14,7 @@ class CanvasHandler {
         this._addListeners();
         this._addLoops();
     }
-    
+
     _onResize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;

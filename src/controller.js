@@ -1,3 +1,5 @@
+"use strict";
+
 class InputSystem {
     constructor(inputMap, canvas) {
         this.inputMap = inputMap;
@@ -11,7 +13,7 @@ class InputSystem {
             right: [],
             middle: []
         };
-        this.mouse = {x: 0, y: 0, left: false, right: false, middle: false};
+        this.mouse = { x: 0, y: 0, left: false, right: false, middle: false };
         this.touches = [];
         this.currentId = 0;
 

@@ -1,3 +1,5 @@
+"use strict";
+
 class Scene {
     constructor(name) {
         this.name = name;

@@ -28,7 +28,7 @@ void main() {
     }
 
     // flicker
-    vec4 color = vec4(flicker);
+    vec4 color = vec4(0, 0, 0, flicker);
 
     // setup
     vec2 pos = v_texCoord * u_resolution;

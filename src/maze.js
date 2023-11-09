@@ -1,3 +1,5 @@
+"use strict";
+
 // maze generator that outputs a 2d array of {right: bool, bottom: bool} if it has a right or bottom is indicated if it has a side. in the size of 
 function generateMaze(width, height) {
     const maze = [];
