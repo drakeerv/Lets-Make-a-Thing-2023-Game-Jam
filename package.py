@@ -2,9 +2,34 @@
 
 import os
 import zipfile
-import rjsmin
-import minify_html
-import rcssmin
+
+ONLINE = True
+if ONLINE:
+    import requests
+    import minify_html
+    import rcssmin
+else:
+    import rjsmin
+
+def minimize_js(js: str) -> str:
+    if ONLINE:
+        return requests.post("https://www.toptal.com/developers/javascript-minifier/api/raw", data={"input": js}).text
+    return rjsmin.jsmin(js)
+
+def minimize_css(css: str) -> str:
+    # toptal is pretty much the same as rcssmin so we'll use that to save requests
+    return rcssmin.cssmin(css)
+
+def minimize_html(html: str) -> str:
+    # for some reason toptal sucks at minifying html
+    return minify_html.minify(html, minify_css=True,
+                              minify_js=True, remove_bangs=True, keep_html_and_head_opening_tags=True, do_not_minify_doctype=True)
+
+MINIFY = {
+    ".js": minimize_js,
+    ".css": minimize_css,
+    ".html": minimize_html
+}
 
 BLOCKLIST = [
     "package.py",
@@ -35,18 +60,10 @@ def zipdir(path: str, ziph: zipfile.ZipFile):
         if os.path.isdir(file):
             zipdir(file, ziph)
         else:
-            if file.endswith(".js"):
+            if file.endswith(tuple(MINIFY.keys())):
                 with open(file, "rb") as f:
                     ziph.writestr(file,
-                                  rjsmin.jsmin(f.read()))
-            elif file.endswith(".html"):
-                with open(file, "rb") as f:
-                    ziph.writestr(file, minify_html.minify(f.read().decode("utf-8"), minify_css=True,
-                                  minify_js=True, remove_bangs=True, keep_html_and_head_opening_tags=True, do_not_minify_doctype=True))
-            elif file.endswith(".css"):
-                with open(file, "rb") as f:
-                    ziph.writestr(file,
-                                  rcssmin.cssmin(f.read().decode("utf-8")))
+                                  MINIFY[os.path.splitext(file)[1]](f.read().decode("utf-8")))
             else:
                 ziph.write(file)
 
