@@ -73,7 +73,7 @@ class ImageAsset extends BaseAsset {
                         }
                     });
 
-                    this.frames = await Promise.all(images.map((image, i) => {
+                    this.frames = await Promise.all(images.map(async (image, i) => {
                         for (let j = 0; j < i; j++) {
                             this.offscreenCtx.drawImage(images[j], 0, 0);
                         }
@@ -84,7 +84,7 @@ class ImageAsset extends BaseAsset {
                         } else {
                             const img = new Image();
                             img.src = this.offscreenCanvas.toDataURL();
-                            return createImageBitmap(img);
+                            return await createImageBitmap(img);
                         }
                     }));
 
