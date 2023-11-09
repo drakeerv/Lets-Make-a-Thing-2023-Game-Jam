@@ -51,7 +51,7 @@ class ImageAsset extends BaseAsset {
                         alpha: true
                     });
 
-                    this.frames = this.rawFrames.map(rawFrame => {
+                    this.bitmaps = this.rawFrames.map(rawFrame => {
                         const dims = rawFrame.dims;
                         const imageData = new ImageData(rawFrame.patch, dims.width, dims.height);
 
@@ -60,11 +60,12 @@ class ImageAsset extends BaseAsset {
                         return this.offscreenCanvas.transferToImageBitmap();
                     });
 
-                    this.frames = this.frames.map((frame, i) => {
+                    this.frames = this.bitmaps.map((bitmap, i) => {
                         for (let j = 0; j < i; j++) {
-                            this.offscreenCtx.drawImage(this.frames[j], 0, 0);
+                            this.offscreenCtx.drawImage(this.bitmaps[j], 0, 0);
                         }
-                        this.offscreenCtx.drawImage(frame, 0, 0);
+                        this.offscreenCtx.drawImage(bitmap, 0, 0);
+
                         return this.offscreenCanvas.transferToImageBitmap();
                     });
 

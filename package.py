@@ -20,6 +20,8 @@ BLOCKLIST = [
     "LICENSE"
 ]
 
+BUILD_FILE = "build/build.zip"
+
 
 def zipdir(path: str, ziph: zipfile.ZipFile):
     for file in os.listdir(path):
@@ -48,11 +50,24 @@ def zipdir(path: str, ziph: zipfile.ZipFile):
             else:
                 ziph.write(file)
 
+def getSizeOfDir(path: str):
+    size = 0
+    for path, _, files in os.walk(path):
+        for f in files:
+            fp = os.path.join(path, f)
+            size += os.path.getsize(fp)
+    return size
+
 
 if __name__ == "__main__":
     if not os.path.exists("build"):
         os.mkdir("build")
-    zipf = zipfile.ZipFile("build/build.zip", "w",
+    zipf = zipfile.ZipFile(BUILD_FILE, "w",
                            zipfile.ZIP_DEFLATED, True, 9)
     zipdir("./", zipf)
     zipf.close()
+
+    print("=" * 20)
+    print("Build complete")
+    print("Build size zipped: " + str(round(os.path.getsize(BUILD_FILE) / 1000000, 3)) + " mb")
+    print("Project size: " + str(round(getSizeOfDir(".") / 1000000, 3)) + " mb")
