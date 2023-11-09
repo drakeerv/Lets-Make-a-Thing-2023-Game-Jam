@@ -11,19 +11,20 @@ if ONLINE:
 else:
     import rjsmin
 
-def minimize_js(js: str) -> str:
+def minimize_js(js: bytes) -> bytes:
+    # toptal is unbeatable at minifying js
     if ONLINE:
-        return requests.post("https://www.toptal.com/developers/javascript-minifier/api/raw", data={"input": js}).text
+        return requests.post("https://www.toptal.com/developers/javascript-minifier/api/raw", data={"input": js.decode()}).text.encode()
     return rjsmin.jsmin(js)
 
-def minimize_css(css: str) -> str:
+def minimize_css(css: bytes) -> bytes:
     # toptal is pretty much the same as rcssmin so we'll use that to save requests
     return rcssmin.cssmin(css)
 
-def minimize_html(html: str) -> str:
+def minimize_html(html: bytes) -> bytes:
     # for some reason toptal sucks at minifying html
-    return minify_html.minify(html, minify_css=True,
-                              minify_js=True, remove_bangs=True, keep_html_and_head_opening_tags=True, do_not_minify_doctype=True)
+    return minify_html.minify(html.decode(), minify_css=True,
+                              minify_js=True, remove_bangs=True, keep_html_and_head_opening_tags=True, do_not_minify_doctype=True).encode()
 
 MINIFY = {
     ".js": minimize_js,
@@ -60,10 +61,10 @@ def zipdir(path: str, ziph: zipfile.ZipFile):
         if os.path.isdir(file):
             zipdir(file, ziph)
         else:
-            if file.endswith(tuple(MINIFY.keys())):
+            if file.lower().endswith(tuple(MINIFY.keys())):
                 with open(file, "rb") as f:
                     ziph.writestr(file,
-                                  MINIFY[os.path.splitext(file)[1]](f.read().decode("utf-8")))
+                                  MINIFY[os.path.splitext(file.lower())[1]](f.read()))
             else:
                 ziph.write(file)
 
@@ -79,6 +80,7 @@ def getSizeOfDir(path: str):
 if __name__ == "__main__":
     if not os.path.exists("build"):
         os.mkdir("build")
+
     zipf = zipfile.ZipFile(BUILD_FILE, "w",
                            zipfile.ZIP_DEFLATED, True, 9)
     zipdir("./", zipf)

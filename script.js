@@ -26,17 +26,14 @@ const IS_MOBILE = isMobile();
 // Assets
 
 const assetsSources = {
-    "switch": "assets/switch.png",
+    "switch": "assets/switch.webp",
     "switch_sound": "assets/switch.ogg",
-    "table": "assets/table.png",
+    "table": "assets/table.webp",
     "key_w": "assets/keys/w.png",
     "key_a": "assets/keys/a.png",
     "key_s": "assets/keys/s.png",
     "key_d": "assets/keys/d.png",
     "key_space": "assets/keys/space.png",
-    "key_q": "assets/keys/q.png",
-    "key_k": "assets/keys/k.png",
-    "key_escape": "assets/keys/escape.png",
     "track1_track": "assets/music/track1.ogg",
     "button_sound": "assets/button.ogg",
     "test_track": "assets/music/test.ogg",

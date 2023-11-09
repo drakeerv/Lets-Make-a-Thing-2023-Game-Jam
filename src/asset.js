@@ -192,7 +192,7 @@ class ShaderAsset extends BaseAsset {
 function resolveAsset(src) {
     if (src.endsWith(".mp3") || src.endsWith(".wav") || src.endsWith(".ogg")) {
         return new AudioAsset(src);
-    } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg")) {
+    } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg") || src.endsWith(".webp")) {
         return new ImageAsset(src);
     } else if (src.endsWith("glsl")) {
         return new ShaderAsset(src);
