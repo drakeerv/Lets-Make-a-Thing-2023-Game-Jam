@@ -38,36 +38,55 @@ class ImageAsset extends BaseAsset {
 
             fetch(this.src)
                 .then(response => response.arrayBuffer())
-                .then(buffer => {
+                .then(async buffer => {
                     this.byteArray = new Uint8Array(buffer);
                     this.gif = new GIF(this.byteArray);
                     this.rawFrames = this.gif.decompressFrames(true);
                     this.totalFrames = this.rawFrames.length;
 
-                    this.offscreenCanvas = new OffscreenCanvas(this.rawFrames[0].dims.width, this.rawFrames[0].dims.height);
+                    const supportsOffscreenCanvas = typeof OffscreenCanvas !== "undefined";
+
+                    if (supportsOffscreenCanvas) {
+                        this.offscreenCanvas = new OffscreenCanvas(this.rawFrames[0].dims.width, this.rawFrames[0].dims.height);
+                    } else {
+                        this.offscreenCanvas = document.createElement("canvas");
+                    }
+
                     this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
                         desynchronized: true,
                         willReadFrequently: true,
                         alpha: true
                     });
 
-                    this.bitmaps = this.rawFrames.map(rawFrame => {
+
+                    const images = this.rawFrames.map(rawFrame => {
                         const dims = rawFrame.dims;
                         const imageData = new ImageData(rawFrame.patch, dims.width, dims.height);
 
                         this.offscreenCtx.putImageData(imageData, dims.left, dims.top);
-
-                        return this.offscreenCanvas.transferToImageBitmap();
-                    });
-
-                    this.frames = this.bitmaps.map((bitmap, i) => {
-                        for (let j = 0; j < i; j++) {
-                            this.offscreenCtx.drawImage(this.bitmaps[j], 0, 0);
+                        if (supportsOffscreenCanvas) {
+                            return this.offscreenCanvas.transferToImageBitmap();
+                        } else {
+                            const img = new Image();
+                            img.src = this.offscreenCanvas.toDataURL();
+                            return img;
                         }
-                        this.offscreenCtx.drawImage(bitmap, 0, 0);
-
-                        return this.offscreenCanvas.transferToImageBitmap();
                     });
+
+                    this.frames = await Promise.all(images.map((image, i) => {
+                        for (let j = 0; j < i; j++) {
+                            this.offscreenCtx.drawImage(images[j], 0, 0);
+                        }
+                        this.offscreenCtx.drawImage(image, 0, 0);
+
+                        if (supportsOffscreenCanvas) {
+                            return this.offscreenCanvas.transferToImageBitmap();
+                        } else {
+                            const img = new Image();
+                            img.src = this.offscreenCanvas.toDataURL();
+                            return createImageBitmap(img);
+                        }
+                    }));
 
                     this.loaded = true;
                     this._callLoadEvents();

@@ -6,4 +6,8 @@ function isMobile() {
     return check;
 };
 
-export { isMobile };
+function isReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+export { isMobile, isReducedMotion };

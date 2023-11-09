@@ -6,7 +6,7 @@ import CanvasHandler from "./src/canvas.js";
 import generateMaze from "./src/maze.js";
 import { Scene, SceneManager } from "./src/scene.js";
 import { lerp, isInside, isTouchInside } from "./src/math.js";
-import { isMobile } from "./src/checks.js";
+import { isMobile, isReducedMotion } from "./src/checks.js";
 
 // Canvas
 
@@ -21,7 +21,9 @@ const canvasHandler = new CanvasHandler(canvas);
 
 const MAZE_GRID_SIZE = 100;
 const MAZE_LINE_WIDTH = 5;
+
 const IS_MOBILE = isMobile();
+const IS_REDUCED_MOTION = isReducedMotion();
 
 // Assets
 
@@ -503,18 +505,20 @@ sceneManager.addScene("game", class extends Scene {
     }
 
     triggerSwitch() {
-        for (let i = 0; i < 10; i++) {
-            this.particles.push({
-                gravity: 9.8,
-                x: 75,
-                y: canvas.height / 2,
-                velx: Math.random() * 100 - 50,
-                vely: Math.random() * 100 - 50,
-                color: "rgba(211, 211, 211, 0.25)",
-                size: Math.random() * 5 + 5,
-                relative: false,
-                lifetime: 2
-            })
+        if (!IS_REDUCED_MOTION) {
+            for (let i = 0; i < 10; i++) {
+                this.particles.push({
+                    gravity: 9.8,
+                    x: 75,
+                    y: canvas.height / 2,
+                    velx: Math.random() * 100 - 50,
+                    vely: Math.random() * 100 - 50,
+                    color: "rgba(211, 211, 211, 0.25)",
+                    size: Math.random() * 5 + 5,
+                    relative: false,
+                    lifetime: 2
+                })
+            }
         }
         assetsLoader.assets.switch_sound.playFromStart();
     }
@@ -702,7 +706,7 @@ sceneManager.addScene("gameOver", class extends Scene {
 
         this.particles = [];
 
-        if (this.gotHighScore) {
+        if (this.gotHighScore && !IS_REDUCED_MOTION) {
             for (let i = 0; i < 100; i++) {
                 // draw confetti from top of screen with random colors. y is above the screen, x is a random point
                 this.particles.push({
@@ -972,7 +976,7 @@ sceneManager.addScene("test", class extends Scene {
         }
 
         // emit particles from cursor of random colors
-        if (inputSystem.mouse.left) {
+        if (inputSystem.mouse.left && !IS_REDUCED_MOTION) {
             this.particles.push({
                 gravity: -98,
                 x: inputSystem.mouse.x,
@@ -1323,93 +1327,97 @@ sceneManager.addOverlay("debug", class extends Scene {
 
 const filterCanvas = document.getElementById("filter");
 const filterCanvasHandler = new CanvasHandler(filterCanvas);
-const filterGl = filterCanvas.getContext(WebGL2RenderingContext ? "webgl2" : "webgl", {
+const filterGl = filterCanvas.getContext("webgl", {
     desynchronized: true
 });
 
-const filterProgram = filterGl.createProgram();
-const filterVertShader = filterGl.createShader(filterGl.VERTEX_SHADER);
-const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
+if (filterGl) {
+    const filterProgram = filterGl.createProgram();
+    const filterVertShader = filterGl.createShader(filterGl.VERTEX_SHADER);
+    const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
 
-function setUpShader() {
-    filterGl.shaderSource(filterVertShader, assetsLoader.assets.filter_vert.shaderSource);
-    filterGl.shaderSource(filterFragShader, assetsLoader.assets.filter_frag.shaderSource);
+    function setUpShader() {
+        filterGl.shaderSource(filterVertShader, assetsLoader.assets.filter_vert.shaderSource);
+        filterGl.shaderSource(filterFragShader, assetsLoader.assets.filter_frag.shaderSource);
 
-    filterGl.compileShader(filterVertShader);
-    filterGl.compileShader(filterFragShader);
+        filterGl.compileShader(filterVertShader);
+        filterGl.compileShader(filterFragShader);
 
-    filterGl.attachShader(filterProgram, filterVertShader);
-    filterGl.attachShader(filterProgram, filterFragShader);
+        filterGl.attachShader(filterProgram, filterVertShader);
+        filterGl.attachShader(filterProgram, filterFragShader);
 
-    filterGl.linkProgram(filterProgram);
-    filterGl.useProgram(filterProgram);
-
-    const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
-    const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
-    const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
-    const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
-
-    const filterPositionBuffer = filterGl.createBuffer();
-    filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-        -1, -1,
-        1, -1,
-        -1, 1,
-        -1, 1,
-        1, -1,
-        1, 1
-    ]), filterGl.STATIC_DRAW);
-
-    const filterTexCoordBuffer = filterGl.createBuffer();
-    filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-        0, 0,
-        1, 0,
-        0, 1,
-        0, 1,
-        1, 0,
-        1, 1
-    ]), filterGl.STATIC_DRAW);
-
-    filterCanvasHandler.addResizeListener(() => {
-        filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
-    });
-
-    filterCanvasHandler.addAnimateListener(() => {
-        filterGl.clearColor(1, 1, 1, 1);
-        filterGl.colorMask(true, true, true, true);
-        filterGl.clear(filterGl.COLOR_BUFFER_BIT);
-
+        filterGl.linkProgram(filterProgram);
         filterGl.useProgram(filterProgram);
 
-        filterGl.enableVertexAttribArray(filterPositionLocation);
+        const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
+        const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
+        const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
+        const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
+
+        const filterPositionBuffer = filterGl.createBuffer();
         filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-        filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+        filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,
+            1, -1,
+            -1, 1,
+            -1, 1,
+            1, -1,
+            1, 1
+        ]), filterGl.STATIC_DRAW);
 
-        filterGl.enableVertexAttribArray(filterTexCoordLocation);
+        const filterTexCoordBuffer = filterGl.createBuffer();
         filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-        filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+        filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+            0, 0,
+            1, 0,
+            0, 1,
+            0, 1,
+            1, 0,
+            1, 1
+        ]), filterGl.STATIC_DRAW);
 
-        filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
-        filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+        filterCanvasHandler.addResizeListener(() => {
+            filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
+        });
 
-        filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+        filterCanvasHandler.addAnimateListener(() => {
+            filterGl.clearColor(1, 1, 1, 1);
+            filterGl.colorMask(true, true, true, true);
+            filterGl.clear(filterGl.COLOR_BUFFER_BIT);
+
+            filterGl.useProgram(filterProgram);
+
+            filterGl.enableVertexAttribArray(filterPositionLocation);
+            filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
+            filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+            filterGl.enableVertexAttribArray(filterTexCoordLocation);
+            filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
+            filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+            filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
+            filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+
+            filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+        });
+    }
+
+    const loadedShaders = { "frag": false, "vert": false };
+    assetsLoader.assets.filter_vert.onLoad(() => {
+        loadedShaders.vert = true;
+        if (loadedShaders.frag) {
+            setUpShader();
+        }
     });
+    assetsLoader.assets.filter_frag.onLoad(() => {
+        loadedShaders.frag = true;
+        if (loadedShaders.vert) {
+            setUpShader();
+        }
+    });
+} else {
+    alert("WebGL not supported. To get the best experience, please use a browser that supports WebGL.");
 }
-
-const loadedShaders = {"frag": false, "vert": false};
-assetsLoader.assets.filter_vert.onLoad(() => {
-    loadedShaders.vert = true;
-    if (loadedShaders.frag) {
-        setUpShader();
-    }
-});
-assetsLoader.assets.filter_frag.onLoad(() => {
-    loadedShaders.frag = true;
-    if (loadedShaders.vert) {
-        setUpShader();
-    }
-});
 
 // Set up game
 
