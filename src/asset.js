@@ -167,11 +167,34 @@ class AudioAsset extends BaseAsset {
     }
 }
 
+class ShaderAsset extends BaseAsset {
+    constructor(src) {
+        super(src);
+    }
+
+    loadAsset() {
+        fetch(this.src)
+            .then(response => response.text())
+            .then(text => {
+                this.shader = text;
+                this.loaded = true;
+                this._callLoadEvents();
+            });
+    }
+
+    get shaderSource() {
+        if (!this.loaded) return null;
+        return this.shader;
+    }
+}
+
 function resolveAsset(src) {
     if (src.endsWith(".mp3") || src.endsWith(".wav") || src.endsWith(".ogg")) {
         return new AudioAsset(src);
     } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg")) {
         return new ImageAsset(src);
+    } else if (src.endsWith("glsl")) {
+        return new ShaderAsset(src);
     } else {
         throw new Error(`Cannot resolve asset ${src}`);
     }

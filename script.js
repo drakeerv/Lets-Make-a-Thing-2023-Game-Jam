@@ -40,7 +40,9 @@ const assetsSources = {
     "track1_track": "assets/music/track1.ogg",
     "button_sound": "assets/button.ogg",
     "test_track": "assets/music/test.ogg",
-    "test": "assets/test.gif"
+    "test": "assets/test.gif",
+    "filter_vert": "assets/filter/vert.opt.glsl",
+    "filter_frag": "assets/filter/frag.opt.glsl"
 }
 const assetsLoader = new AssetLoader(assetsSources);
 assetsLoader.startLoadAssets();
@@ -1302,15 +1304,15 @@ sceneManager.addOverlay("debug", class extends Scene {
         ctx.save();
 
         ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, 150, 160);
+        ctx.fillRect(ctx.canvas.width / 2 - 75, 0, 150, 160);
         ctx.fillStyle = "white";
-        ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), 10, 20);
-        ctx.fillText("FPS: " + Math.round(canvasHandler.fps), 10, 40);
-        ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, 10, 60);
-        ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, 10, 80);
-        ctx.fillText("Current Scene: " + sceneManager.currentScene.name, 10, 100);
-        ctx.fillText("Current Overlay: " + sceneManager.currentOverlay.name, 10, 120);
-        ctx.fillText("Is Mobile: " + IS_MOBILE, 10, 140);
+        ctx.fillText("Updatesps: " + Math.round(canvasHandler.updatesps), ctx.canvas.width / 2 - 65, 20);
+        ctx.fillText("FPS: " + Math.round(canvasHandler.fps), ctx.canvas.width / 2 - 65, 40);
+        ctx.fillText("Canvas Size: " + ctx.canvas.width + "x" + ctx.canvas.height, ctx.canvas.width / 2 - 65, 60);
+        ctx.fillText("Mouse: " + inputSystem.mouse.x + ", " + inputSystem.mouse.y, ctx.canvas.width / 2 - 65, 80);
+        ctx.fillText("Current Scene: " + sceneManager.currentScene.name, ctx.canvas.width / 2 - 65, 100);
+        ctx.fillText("Current Overlay: " + sceneManager.currentOverlay.name, ctx.canvas.width / 2 - 65, 120);
+        ctx.fillText("Is Mobile: " + IS_MOBILE, ctx.canvas.width / 2 - 65, 140);
 
         ctx.restore();
     }
@@ -1324,7 +1326,7 @@ sceneManager.addOverlay("debug", class extends Scene {
 
 const filterCanvas = document.getElementById("filter");
 const filterCanvasHandler = new CanvasHandler(filterCanvas);
-const filterGl = filterCanvas.getContext("webgl2", {
+const filterGl = filterCanvas.getContext(WebGL2RenderingContext ? "webgl2" : "webgl", {
     desynchronized: true
 });
 
@@ -1332,148 +1334,87 @@ const filterProgram = filterGl.createProgram();
 const filterVertShader = filterGl.createShader(filterGl.VERTEX_SHADER);
 const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
 
-filterGl.shaderSource(filterVertShader, `
-    attribute vec2 a_position;
-    attribute vec2 a_texCoord;
+function setUpShader() {
+    filterGl.shaderSource(filterVertShader, assetsLoader.assets.filter_vert.shaderSource);
+    filterGl.shaderSource(filterFragShader, assetsLoader.assets.filter_frag.shaderSource);
 
-    varying vec2 v_texCoord;
+    filterGl.compileShader(filterVertShader);
+    filterGl.compileShader(filterFragShader);
 
-    void main() {
-        gl_Position = vec4(a_position, 0, 1);
-        v_texCoord = a_texCoord;
-    }
-`);
+    filterGl.attachShader(filterProgram, filterVertShader);
+    filterGl.attachShader(filterProgram, filterFragShader);
 
-filterGl.shaderSource(filterFragShader, `
-    precision mediump float;
-
-    uniform sampler2D u_image;
-    uniform vec2 u_resolution;
-    uniform float u_time;
-
-    varying vec2 v_texCoord;
-
-    const float SCANLINE_STRENGTH = 0.1;
-    const float SCANLINE_WIDTH = 3.0;
-    const float SNOW_STRENGTH = 0.3;
-    const float FLICKER_STRENGTH = 0.02;
-    const float MOVEMENT_STRENGTH = 0.05;
-    const float MOVEMENT_SPEED = 10.0;
-    const float VIGNETTE_STRENGTH = 0.3;
-    const float VIGNETTE_SIZE = 3.0;
-
-    float randomizer = 0.0;
-
-    float rand(vec2 co){
-        float r = fract(sin(dot(co + mod(u_time, 1.0), vec2(12.9898, 78.233))) * 43758.5453);
-        return r;
-    }
-    
-    void main() {
-        vec4 color = texture2D(u_image, v_texCoord);
-
-        // setup
-        float x = v_texCoord.x * u_resolution.x;
-        float y = v_texCoord.y * u_resolution.y;
-        color.a = 0.0;
-
-        // scanlines
-        if (mod(x, 10.0) <= SCANLINE_WIDTH) {
-            color.a = SCANLINE_STRENGTH;
-        }
-
-        // snow
-        color.a += rand(v_texCoord) * SNOW_STRENGTH;
-
-        // flicker
-        color.a += rand(vec2(0)) * FLICKER_STRENGTH;
-
-        // movement
-        color.a += sin(x / MOVEMENT_SPEED + u_time) * MOVEMENT_STRENGTH;
-
-        // vignette
-        vec2 center = u_resolution / 2.0;
-        vec2 pos = vec2(x, y);
-        vec2 halfSize = u_resolution.xy / 2.0;
-        float distance = length((pos - center) / halfSize);
-        float alpha = pow(distance, VIGNETTE_SIZE);
-        color.a += alpha * VIGNETTE_STRENGTH;
-
-        // clamp
-        color.a = clamp(color.a, 0.0, 1.0);
-        
-        // color
-        gl_FragColor = color;
-    }
-`);
-
-filterGl.compileShader(filterVertShader);
-filterGl.compileShader(filterFragShader);
-
-filterGl.attachShader(filterProgram, filterVertShader);
-filterGl.attachShader(filterProgram, filterFragShader);
-
-filterGl.linkProgram(filterProgram);
-filterGl.useProgram(filterProgram);
-
-const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
-const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
-const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
-const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
-
-const filterPositionBuffer = filterGl.createBuffer();
-filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-    -1, -1,
-    1, -1,
-    -1, 1,
-    -1, 1,
-    1, -1,
-    1, 1
-]), filterGl.STATIC_DRAW);
-
-const filterTexCoordBuffer = filterGl.createBuffer();
-filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
-    0, 0,
-    1, 0,
-    0, 1,
-    0, 1,
-    1, 0,
-    1, 1
-]), filterGl.STATIC_DRAW);
-
-const filterTexture = filterGl.createTexture();
-filterGl.bindTexture(filterGl.TEXTURE_2D, filterTexture);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_S, filterGl.CLAMP_TO_EDGE);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_WRAP_T, filterGl.CLAMP_TO_EDGE);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MIN_FILTER, filterGl.NEAREST);
-filterGl.texParameteri(filterGl.TEXTURE_2D, filterGl.TEXTURE_MAG_FILTER, filterGl.NEAREST);
-
-filterCanvasHandler.addResizeListener(() => {
-    filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
-});
-
-filterCanvasHandler.addAnimateListener(() => {
-    filterGl.clearColor(1, 1, 1, 1);
-    filterGl.colorMask(true, true, true, true);
-    filterGl.clear(filterGl.COLOR_BUFFER_BIT);
-
+    filterGl.linkProgram(filterProgram);
     filterGl.useProgram(filterProgram);
 
-    filterGl.enableVertexAttribArray(filterPositionLocation);
+    const filterPositionLocation = filterGl.getAttribLocation(filterProgram, "a_position");
+    const filterTexCoordLocation = filterGl.getAttribLocation(filterProgram, "a_texCoord");
+    const filterResolutionLocation = filterGl.getUniformLocation(filterProgram, "u_resolution");
+    const filterTimeLocation = filterGl.getUniformLocation(filterProgram, "u_time");
+
+    const filterPositionBuffer = filterGl.createBuffer();
     filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
-    filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+        -1, -1,
+        1, -1,
+        -1, 1,
+        -1, 1,
+        1, -1,
+        1, 1
+    ]), filterGl.STATIC_DRAW);
 
-    filterGl.enableVertexAttribArray(filterTexCoordLocation);
+    const filterTexCoordBuffer = filterGl.createBuffer();
     filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
-    filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+    filterGl.bufferData(filterGl.ARRAY_BUFFER, new Float32Array([
+        0, 0,
+        1, 0,
+        0, 1,
+        0, 1,
+        1, 0,
+        1, 1
+    ]), filterGl.STATIC_DRAW);
 
-    filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
-    filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+    filterCanvasHandler.addResizeListener(() => {
+        filterGl.viewport(0, 0, filterCanvas.width, filterCanvas.height);
+    });
 
-    filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+    filterCanvasHandler.addAnimateListener(() => {
+        filterGl.clearColor(1, 1, 1, 1);
+        filterGl.colorMask(true, true, true, true);
+        filterGl.clear(filterGl.COLOR_BUFFER_BIT);
+
+        filterGl.useProgram(filterProgram);
+
+        filterGl.enableVertexAttribArray(filterPositionLocation);
+        filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterPositionBuffer);
+        filterGl.vertexAttribPointer(filterPositionLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+        filterGl.enableVertexAttribArray(filterTexCoordLocation);
+        filterGl.bindBuffer(filterGl.ARRAY_BUFFER, filterTexCoordBuffer);
+        filterGl.vertexAttribPointer(filterTexCoordLocation, 2, filterGl.FLOAT, false, 0, 0);
+
+        filterGl.uniform2f(filterResolutionLocation, filterCanvas.width, filterCanvas.height);
+        filterGl.uniform1f(filterTimeLocation, performance.now() / 1000);
+
+        filterGl.drawArrays(filterGl.TRIANGLES, 0, 6);
+    });
+}
+
+const loadedShaders = {"frag": false, "vert": false};
+assetsLoader.assets.filter_vert.onLoad(() => {
+    loadedShaders.vert = true;
+    if (loadedShaders.frag) {
+        setUpShader();
+    }
 });
+assetsLoader.assets.filter_frag.onLoad(() => {
+    loadedShaders.frag = true;
+    if (loadedShaders.vert) {
+        setUpShader();
+    }
+});
+
+// Set up game
 
 canvasHandler.addAnimateListener(sceneManager.animate.bind(sceneManager));
 canvasHandler.addUpdateListener(sceneManager.update.bind(sceneManager));
