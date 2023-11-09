@@ -1,4 +1,10 @@
-# zip up all files in the current directory except block list
+# You can optimize files manually using these tools
+# https://optivorbis.github.io/OptiVorbis/
+# https://prepack.io/repl.html
+# https://zz85.github.io/glsl-optimizer/
+# https://ctrl-alt-test.fr/minifier/
+# https://ezgif.com/optiwebp/
+# https://ezgif.com/optimize/
 
 import os
 import zipfile
@@ -63,6 +69,7 @@ MINIFY = {".js": minimize_js, ".css": minimize_css, ".html": minimize_html}
 
 BLOCKLIST = [
     "package.py",
+    "requirements.txt",
     "build.zip",
     "sources",
     "build",
@@ -72,7 +79,7 @@ BLOCKLIST = [
     ".gitattributes",
     ".gitignore",
     "readme.md",
-    "LICENSE",
+    "LICENSE"
 ]
 
 BUILD_FILE = "build/build.zip"
