@@ -1,0 +1,5 @@
+requests
+minify-html
+rcssmin
+rjsmin
+fastzip
