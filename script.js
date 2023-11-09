@@ -161,7 +161,7 @@ sceneManager.addScene("tutorial", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             if (this.redirectedFromMenu) {
                 sceneManager.setCurrentScene("menu");
@@ -172,7 +172,7 @@ sceneManager.addScene("tutorial", class extends Scene {
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 4 + 400, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
@@ -228,10 +228,10 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             sceneManager.setCurrentScene("tutorial");
-        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
 
             hasSeenTutorial = true;
@@ -242,9 +242,9 @@ sceneManager.addScene("hasNotSeenTutorial", class extends Scene {
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
-        } else if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20})) {
+        } else if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 150, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
@@ -462,7 +462,7 @@ sceneManager.addScene("game", class extends Scene {
             } else {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
             }
-        
+
             ctx.fillRect(ctx.canvas.width - 160, ctx.canvas.height - 240, 80, 80);
             ctx.fillRect(ctx.canvas.width - 240, ctx.canvas.height - 160, 80, 80);
             ctx.fillRect(ctx.canvas.width - 80, ctx.canvas.height - 160, 80, 80);
@@ -524,7 +524,7 @@ sceneManager.addScene("game", class extends Scene {
         this.updateParticles(dt);
 
         // Light switch
-        const hoverOverLight = isInside(inputSystem.mouse, {x: 20, y: ctx.canvas.height / 2 - 100, width: 110, height: 200});
+        const hoverOverLight = isInside(inputSystem.mouse, { x: 20, y: ctx.canvas.height / 2 - 100, width: 110, height: 200 });
         const userLightOn = inputSystem.isActionHeld("light") || (hoverOverLight && inputSystem.mouse.left);
         if (userLightOn != this.lightOn) {
             if (!userLightOn && this.lightOn && Date.now() - this.lightOnTime > 1000) {
@@ -545,10 +545,10 @@ sceneManager.addScene("game", class extends Scene {
 
         // Player
         if (!this.lightOn) {
-            const forwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 240, width: 80, height: 80};
-            const leftButton = {x: ctx.canvas.width - 240, y: ctx.canvas.height - 160, width: 80, height: 80};
-            const backwardButton = {x: ctx.canvas.width - 160, y: ctx.canvas.height - 80, width: 80, height: 80};
-            const rightButton = {x: ctx.canvas.width - 80, y: ctx.canvas.height - 160, width: 80, height: 80};
+            const forwardButton = { x: ctx.canvas.width - 160, y: ctx.canvas.height - 240, width: 80, height: 80 };
+            const leftButton = { x: ctx.canvas.width - 240, y: ctx.canvas.height - 160, width: 80, height: 80 };
+            const backwardButton = { x: ctx.canvas.width - 160, y: ctx.canvas.height - 80, width: 80, height: 80 };
+            const rightButton = { x: ctx.canvas.width - 80, y: ctx.canvas.height - 160, width: 80, height: 80 };
 
             const hoverOverForward = isInside(inputSystem.mouse, forwardButton);
             const hoverOverLeft = isInside(inputSystem.mouse, leftButton);
@@ -889,7 +889,7 @@ sceneManager.addScene("test", class extends Scene {
 
         // draw dancing player and enemies to the beat of the song
         ctx.fillStyle = "green";
-        
+
         const height = 15 + Math.abs(Math.sin(this.animationTime * this.speed * Math.PI)) * 5;
         ctx.fillRect(ctx.canvas.width / 2 - 10, ctx.canvas.height / 4 * 3 - height, 20, height);
 
@@ -900,7 +900,7 @@ sceneManager.addScene("test", class extends Scene {
         ctx.save();
 
         ctx.fillStyle = "red";
-        
+
         const height = Math.abs(Math.cos(this.animationTime * this.speed * Math.PI)) * 15;
         ctx.fillRect(ctx.canvas.width / 2 - 100, ctx.canvas.height / 4 * 3 - height - 20, 20, 20);
 
@@ -912,7 +912,7 @@ sceneManager.addScene("test", class extends Scene {
 
         // draw gif
         ctx.drawImage(assetsLoader.assets.test.img, ctx.canvas.width / 2 + 50, ctx.canvas.height / 4 * 3 - 50, 100, 100);
-    
+
         ctx.restore();
     }
 
@@ -959,14 +959,14 @@ sceneManager.addScene("test", class extends Scene {
     }
 
     onClick() {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             assetsLoader.assets.button_sound.playFromStart();
             sceneManager.setCurrentScene("menu");
         }
     }
 
     update(dt) {
-        if (isInside(inputSystem.mouse, {x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20})) {
+        if (isInside(inputSystem.mouse, { x: ctx.canvas.width / 2 - 100, y: ctx.canvas.height / 2 + 100, width: 200, height: 20 })) {
             canvasHandler.changeCursor("pointer");
         } else {
             canvasHandler.changeCursor("default");
