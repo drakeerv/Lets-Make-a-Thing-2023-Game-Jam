@@ -76,10 +76,8 @@ function setHighScore(score) {
 }
 
 function readLocalStorage() {
-    try {
-        hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
-        highScore = parseInt(localStorage.getItem("highScore")) || 0;
-    } catch {}
+    hasSeenTutorial = localStorage.getItem("hasSeenTutorial") == "true";
+    highScore = parseInt(localStorage.getItem("highScore")) || 0;
 }
 
 function resetLocalStorage() {
