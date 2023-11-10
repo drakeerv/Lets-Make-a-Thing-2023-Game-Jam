@@ -59,33 +59,20 @@ class ImageAsset extends BaseAsset {
                     });
 
 
-                    const images = this.rawFrames.map(rawFrame => {
+                    const images = await Promise.all(this.rawFrames.map(async rawFrame => {
                         const dims = rawFrame.dims;
                         const imageData = new ImageData(rawFrame.patch, dims.width, dims.height);
 
                         this.offscreenCtx.putImageData(imageData, dims.left, dims.top);
-                        if (supportsOffscreenCanvas) {
-                            return this.offscreenCanvas.transferToImageBitmap();
-                        } else {
-                            const img = new Image();
-                            img.src = this.offscreenCanvas.toDataURL();
-                            return img;
-                        }
-                    });
+                        return await createImageBitmap(this.offscreenCanvas);
+                    }));
 
-                    this.frames = await Promise.all(images.map((image, i) => {
+                    this.frames = await Promise.all(images.map(async (image, i) => {
                         for (let j = 0; j < i; j++) {
                             this.offscreenCtx.drawImage(images[j], 0, 0);
                         }
                         this.offscreenCtx.drawImage(image, 0, 0);
-
-                        if (supportsOffscreenCanvas) {
-                            return this.offscreenCanvas.transferToImageBitmap();
-                        } else {
-                            const img = new Image();
-                            img.src = this.offscreenCanvas.toDataURL();
-                            return createImageBitmap(img);
-                        }
+                        return await createImageBitmap(this.offscreenCanvas);
                     }));
 
                     this.loaded = true;
