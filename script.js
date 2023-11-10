@@ -41,7 +41,8 @@ const assetsSources = {
     "test_track": "assets/music/test.ogg",
     "test": "assets/test.gif",
     "filter_vert": "assets/filter/vert.opt.glsl",
-    "filter_frag": "assets/filter/frag.opt.glsl"
+    "filter_frag": "assets/filter/frag.opt.glsl",
+    "credits_text": "credits.txt",
 }
 const assetsLoader = new AssetLoader(assetsSources);
 assetsLoader.startLoadAssets();
@@ -1022,14 +1023,8 @@ sceneManager.addScene("credits", class extends Scene {
         }, "quit");
 
         this.leftClickListener = inputSystem.addClickListener(this.onClick.bind(this), "left");
-
-        this.credits = fetch("credits.txt").then((response) => {
-            return response.text();
-        }).then((text) => {
-            this.credits = text.split("\n");
-        });
-
         this.confirmResetScreen = false;
+        this.credits = assetsLoader.assets.credits_text.text.split("\n");
     }
 
     animate(ctx) {
@@ -1047,10 +1042,8 @@ sceneManager.addScene("credits", class extends Scene {
         ctx.font = "15px Retro";
         ctx.textAlign = "center";
 
-        if (this.credits) {
-            for (let i = 0; i < this.credits.length; i++) {
-                ctx.fillText(this.credits[i], ctx.canvas.width / 2, ctx.canvas.height / 4 + 50 + (i * 20));
-            }
+        for (let i = 0; i < this.credits.length; i++) {
+            ctx.fillText(this.credits[i], ctx.canvas.width / 2, ctx.canvas.height / 4 + 50 + (i * 20));
         }
 
         // draw back button
@@ -1337,8 +1330,8 @@ if (filterGl) {
     const filterFragShader = filterGl.createShader(filterGl.FRAGMENT_SHADER);
 
     function setUpShader() {
-        filterGl.shaderSource(filterVertShader, assetsLoader.assets.filter_vert.shaderSource);
-        filterGl.shaderSource(filterFragShader, assetsLoader.assets.filter_frag.shaderSource);
+        filterGl.shaderSource(filterVertShader, assetsLoader.assets.filter_vert.text);
+        filterGl.shaderSource(filterFragShader, assetsLoader.assets.filter_frag.text);
 
         filterGl.compileShader(filterVertShader);
         filterGl.compileShader(filterFragShader);

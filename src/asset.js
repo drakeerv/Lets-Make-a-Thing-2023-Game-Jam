@@ -174,7 +174,7 @@ class AudioAsset extends BaseAsset {
     }
 }
 
-class ShaderAsset extends BaseAsset {
+class TextAsset extends BaseAsset {
     constructor(src) {
         super(src);
     }
@@ -183,15 +183,10 @@ class ShaderAsset extends BaseAsset {
         fetch(this.src)
             .then(response => response.text())
             .then(text => {
-                this.shader = text;
+                this.text = text;
                 this.loaded = true;
                 this._callLoadEvents();
             });
-    }
-
-    get shaderSource() {
-        if (!this.loaded) return null;
-        return this.shader;
     }
 }
 
@@ -200,8 +195,8 @@ function resolveAsset(src) {
         return new AudioAsset(src);
     } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg") || src.endsWith(".webp")) {
         return new ImageAsset(src);
-    } else if (src.endsWith("glsl")) {
-        return new ShaderAsset(src);
+    } else if (src.endsWith("txt") || src.endsWith(".glsl")) {
+        return new TextAsset(src);
     } else {
         throw new Error(`Cannot resolve asset ${src}`);
     }
