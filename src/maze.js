@@ -1,6 +1,5 @@
 "use strict";
 
-// maze generator that outputs a 2d array of {right: bool, bottom: bool} if it has a right or bottom is indicated if it has a side. in the size of 
 function generateMaze(width, height) {
     const maze = [];
     for (let i = 0; i < height; i++) {
@@ -13,11 +12,6 @@ function generateMaze(width, height) {
     const stack = [];
     let current = maze[0][0];
     maze[0][0].visited = true;
-
-    // top is either row 0 or if the cell above's bottom is true
-    // left is either column 0 or if the cell to the left's right is true
-    // bottom is current cell's bottom or if the row is the last row
-    // right is current cell's right or if the column is the last column
 
     function removeWallBetweenCells(cell1, cell2) {
         if (cell1.y === cell2.y) {

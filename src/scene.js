@@ -5,20 +5,17 @@ class Scene {
         this.name = name;
     }
 
-    animate(ctx) {
-    }
+    animate(ctx) {}
 
-    update(dt) {
-    }
+    update(dt) {}
 
-    destroy() {
-    }
+    destroy() {}
 }
 
 class SceneManager {
-    constructor(ctx, scenes = [], overlays = []) {
-        this.scenes = scenes;
-        this.overlays = overlays;
+    constructor(ctx) {
+        this.scenes = [];
+        this.overlays = [];
         this.currentScene = null;
         this.currentOverlay = null;
         this.showOverlay = false;

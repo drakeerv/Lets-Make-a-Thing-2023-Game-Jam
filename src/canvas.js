@@ -11,11 +11,11 @@ class CanvasHandler {
         this.updatesps = 0;
         this.fps = 0;
 
-        this._addListeners();
-        this._addLoops();
+        this.#addListeners();
+        this.#addLoops();
     }
 
-    _onResize() {
+    #onResize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.resizeListeners.forEach(callback => callback());
@@ -38,12 +38,12 @@ class CanvasHandler {
         this.updateListeners.push(callback);
     }
 
-    _addListeners() {
-        window.addEventListener("resize", this._onResize.bind(this));
-        this._onResize();
+    #addListeners() {
+        window.addEventListener("resize", this.#onResize.bind(this));
+        this.#onResize();
     }
 
-    _addLoops() {
+    #addLoops() {
         let lastAnimate = performance.now();
         function animateLoop() {
             const now = performance.now();

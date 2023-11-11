@@ -1,6 +1,6 @@
 "use strict";
 
-class BaseAsset {
+class Asset {
     constructor(src) {
         this.src = src;
 
@@ -10,8 +10,13 @@ class BaseAsset {
         this.loadEvents = [];
     }
 
-    _callLoadEvents() {
+    #callLoadEvents() {
         this.loadEvents.forEach(callback => callback());
+    }
+
+    async loadAsset() {
+        this.loaded = true;
+        this.#callLoadEvents();
     }
 
     onLoad(callback) {
@@ -23,12 +28,12 @@ class BaseAsset {
     }
 }
 
-class ImageAsset extends BaseAsset {
+class ImageAsset extends Asset {
     constructor(src) {
         super(src);
     }
 
-    loadAsset() {
+    async loadAsset() {
         this.isGif = this.src.endsWith(".gif");
 
         if (this.isGif) {
@@ -36,54 +41,49 @@ class ImageAsset extends BaseAsset {
             this.playbackRate = 0.1;
             this.currentPlayback = 0;
 
-            fetch(this.src)
-                .then(response => response.arrayBuffer())
-                .then(async buffer => {
-                    this.byteArray = new Uint8Array(buffer);
-                    this.gif = new GIF(this.byteArray);
-                    this.rawFrames = this.gif.decompressFrames(true);
-                    this.totalFrames = this.rawFrames.length;
+            const buffer = await fetch(this.src)
+                .then(response => response.arrayBuffer());
 
-                    const supportsOffscreenCanvas = typeof OffscreenCanvas !== "undefined";
+            this.byteArray = new Uint8Array(buffer);
+            this.gif = new GIF(this.byteArray);
+            this.rawFrames = this.gif.decompressFrames(true);
+            this.totalFrames = this.rawFrames.length;
 
-                    if (supportsOffscreenCanvas) {
-                        this.offscreenCanvas = new OffscreenCanvas(this.rawFrames[0].dims.width, this.rawFrames[0].dims.height);
-                    } else {
-                        this.offscreenCanvas = document.createElement("canvas");
-                    }
+            const supportsOffscreenCanvas = typeof OffscreenCanvas !== "undefined";
 
-                    this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
-                        desynchronized: true,
-                        willReadFrequently: true,
-                        alpha: true
-                    });
+            if (supportsOffscreenCanvas) {
+                this.offscreenCanvas = new OffscreenCanvas(this.rawFrames[0].dims.width, this.rawFrames[0].dims.height);
+            } else {
+                this.offscreenCanvas = document.createElement("canvas");
+            }
+
+            this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
+                desynchronized: true,
+                willReadFrequently: true,
+                alpha: true
+            });
 
 
-                    const images = await Promise.all(this.rawFrames.map(async rawFrame => {
-                        const dims = rawFrame.dims;
-                        const imageData = new ImageData(rawFrame.patch, dims.width, dims.height);
+            const images = await Promise.all(this.rawFrames.map(async rawFrame => {
+                const dims = rawFrame.dims;
+                const imageData = new ImageData(rawFrame.patch, dims.width, dims.height);
 
-                        this.offscreenCtx.putImageData(imageData, dims.left, dims.top);
-                        return await createImageBitmap(this.offscreenCanvas);
-                    }));
+                this.offscreenCtx.putImageData(imageData, dims.left, dims.top);
+                return await createImageBitmap(this.offscreenCanvas);
+            }));
 
-                    this.frames = await Promise.all(images.map(async (image, i) => {
-                        for (let j = 0; j < i; j++) {
-                            this.offscreenCtx.drawImage(images[j], 0, 0);
-                        }
-                        this.offscreenCtx.drawImage(image, 0, 0);
-                        return await createImageBitmap(this.offscreenCanvas);
-                    }));
+            this.frames = await Promise.all(images.map(async (image, i) => {
+                for (let j = 0; j < i; j++) {
+                    this.offscreenCtx.drawImage(images[j], 0, 0);
+                }
+                this.offscreenCtx.drawImage(image, 0, 0);
+                return await createImageBitmap(this.offscreenCanvas);
+            }));
 
-                    this.loaded = true;
-                    this._callLoadEvents();
-                });
+            super.loadAsset();
         } else {
             this.image = new Image();
-            this.image.addEventListener("load", () => {
-                this.loaded = true;
-                this._callLoadEvents();
-            });
+            this.image.addEventListener("load", super.loadAsset.bind(this));
             this.image.src = this.src;
         }
     }
@@ -104,17 +104,14 @@ class ImageAsset extends BaseAsset {
     }
 }
 
-class AudioAsset extends BaseAsset {
+class AudioAsset extends Asset {
     constructor(src) {
         super(src);
     }
 
-    loadAsset() {
+    async loadAsset() {
         this.audio = new Audio();
-        this.audio.addEventListener("canplaythrough", () => {
-            this.loaded = true;
-            this._callLoadEvents();
-        });
+        this.audio.addEventListener("canplaythrough", super.loadAsset.bind(this));
         this.audio.src = this.src;
     }
 
@@ -174,31 +171,15 @@ class AudioAsset extends BaseAsset {
     }
 }
 
-class TextAsset extends BaseAsset {
+class TextAsset extends Asset {
     constructor(src) {
         super(src);
     }
 
-    loadAsset() {
-        fetch(this.src)
-            .then(response => response.text())
-            .then(text => {
-                this.text = text;
-                this.loaded = true;
-                this._callLoadEvents();
-            });
-    }
-}
-
-function resolveAsset(src) {
-    if (src.endsWith(".mp3") || src.endsWith(".wav") || src.endsWith(".ogg")) {
-        return new AudioAsset(src);
-    } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg") || src.endsWith(".webp")) {
-        return new ImageAsset(src);
-    } else if (src.endsWith("txt") || src.endsWith(".glsl")) {
-        return new TextAsset(src);
-    } else {
-        throw new Error(`Cannot resolve asset ${src}`);
+    async loadAsset() {
+        this.text = await fetch(this.src)
+            .then(response => response.text());
+        super.loadAsset();
     }
 }
 
@@ -214,10 +195,22 @@ class AssetLoader {
         this.loadCallbacks = [];
     }
 
+    resolveAsset(src) {
+        if (src.endsWith(".mp3") || src.endsWith(".wav") || src.endsWith(".ogg")) {
+            return new AudioAsset(src);
+        } else if (src.endsWith(".gif") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg") || src.endsWith(".webp")) {
+            return new ImageAsset(src);
+        } else if (src.endsWith("txt") || src.endsWith(".glsl")) {
+            return new TextAsset(src);
+        } else {
+            throw new Error(`Cannot resolve asset ${src}`);
+        }
+    }
+
     startLoadAssets() {
         for (const name in this.sources) {
             const src = this.sources[name];
-            const asset = resolveAsset(src);
+            const asset = this.resolveAsset(src);
             asset.onLoad(() => {
                 this.totalLoaded++;
                 if (this.totalLoaded == this.totalAssets) {
@@ -248,6 +241,5 @@ class AssetLoader {
 export {
     ImageAsset,
     AudioAsset,
-    AssetLoader,
-    resolveAsset
+    AssetLoader
 }

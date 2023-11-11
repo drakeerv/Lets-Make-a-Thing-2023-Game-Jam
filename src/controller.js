@@ -5,7 +5,6 @@ class InputSystem {
         this.inputMap = inputMap;
         this.canvas = canvas;
 
-        // A input handler that can handle held keys, single use keys, and controllers
         this.heldKeys = [];
         this.keyPressListeners = {};
         this.mouseClickListeners = {
@@ -17,20 +16,20 @@ class InputSystem {
         this.touches = [];
         this.currentId = 0;
 
-        this._setupListeners();
+        this.#setupListeners();
     }
 
-    _onKeyDown(event) {
+    #onKeyDown(event) {
         const key = event.key;
         if (!this.heldKeys.includes(key)) {
             this.heldKeys.push(key);
         }
 
         if (event.repeat) return;
-        this._onKeyPress(event);
+        this.#onKeyPress(event);
     }
 
-    _onKeyUp(event) {
+    #onKeyUp(event) {
         const key = event.key;
         const index = this.heldKeys.indexOf(key);
         if (index > -1) {
@@ -38,13 +37,13 @@ class InputSystem {
         }
     }
 
-    _onMouseMove(event) {
+    #onMouseMove(event) {
         const rect = this.canvas.getBoundingClientRect();
         this.mouse.x = event.clientX - rect.left;
         this.mouse.y = event.clientY - rect.top;
     }
 
-    _onMouseDown(event) {
+    #onMouseDown(event) {
         if (event.button === 0) {
             this.mouse.left = true;
             if (!event.repeat) this.mouseClickListeners.left.forEach(data => data.callback());
@@ -57,7 +56,7 @@ class InputSystem {
         }
     }
 
-    _onMouseUp(event) {
+    #onMouseUp(event) {
         if (event.button === 0) {
             this.mouse.left = false;
         } else if (event.button === 1) {
@@ -67,7 +66,7 @@ class InputSystem {
         }
     }
 
-    _onTouchStart(event) {
+    #onTouchStart(event) {
         event.preventDefault();
         const rect = this.canvas.getBoundingClientRect();
         for (let i = 0; i < event.changedTouches.length; i++) {
@@ -86,7 +85,7 @@ class InputSystem {
         this.mouseClickListeners.left.forEach(data => data.callback());
     }
 
-    _onTouchMove(event) {
+    #onTouchMove(event) {
         event.preventDefault();
         const rect = this.canvas.getBoundingClientRect();
         for (let i = 0; i < event.changedTouches.length; i++) {
@@ -103,7 +102,7 @@ class InputSystem {
         this.mouse.left = true;
     }
 
-    _onTouchEnd(event) {
+    #onTouchEnd(event) {
         event.preventDefault();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
@@ -132,7 +131,7 @@ class InputSystem {
         }
     }
 
-    _onKeyPress(event) {
+    #onKeyPress(event) {
         const key = event.key;
         const action = this.getActionFromKey(key);
         if (action && this.keyPressListeners[action]) {
@@ -177,17 +176,17 @@ class InputSystem {
         }
     }
 
-    _setupListeners() {
-        this.canvas.addEventListener("keydown", this._onKeyDown.bind(this));
-        window.addEventListener("keyup", this._onKeyUp.bind(this));
+    #setupListeners() {
+        this.canvas.addEventListener("keydown", this.#onKeyDown.bind(this));
+        window.addEventListener("keyup", this.#onKeyUp.bind(this));
 
-        this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
-        this.canvas.addEventListener("mousedown", this._onMouseDown.bind(this));
-        window.addEventListener("mouseup", this._onMouseUp.bind(this));
+        this.canvas.addEventListener("mousemove", this.#onMouseMove.bind(this));
+        this.canvas.addEventListener("mousedown", this.#onMouseDown.bind(this));
+        window.addEventListener("mouseup", this.#onMouseUp.bind(this));
 
-        this.canvas.addEventListener("touchstart", this._onTouchStart.bind(this));
-        this.canvas.addEventListener("touchmove", this._onTouchMove.bind(this));
-        this.canvas.addEventListener("touchend", this._onTouchEnd.bind(this));
+        this.canvas.addEventListener("touchstart", this.#onTouchStart.bind(this));
+        this.canvas.addEventListener("touchmove", this.#onTouchMove.bind(this));
+        this.canvas.addEventListener("touchend", this.#onTouchEnd.bind(this));
     }
 
     isActionHeld(action) {
